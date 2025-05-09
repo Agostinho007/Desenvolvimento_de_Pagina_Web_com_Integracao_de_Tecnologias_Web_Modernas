@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav class="shadow">
+    <div class="container mx-auto px-4 py-2 flex justify-between">
+      <a href="/home.html" class="text-2xl font-bold">TaskFlow</a>
+      <div class="space-x-4">
+        <a href="/cronograma.html" class="hover:text-blue-500">Cronograma</a>
+        <a href="/chat.html" class="hover:text-blue-500">Chat</a>
+        <a href="/profile.html" class="hover:text-blue-500">Perfil</a>
+      </div>
+    </div>
+  </nav>
+  <div class="container mx-auto mt-6">
+    <div class="p-6 rounded-lg shadow">
+      <h1 class="text-2xl font-bold mb-4">Chat do TaskFlow</h1>
+      <div id="chatAssistente" class="space-y-4">
+        <div id="mensagens" class="space-y-2 max-h-96 overflow-y-auto p-4 border rounded"></div>
+        <div id="limiteMensagem" class="hidden text-red-500 mb-2"></div>
+        <button id="iniciarChatBidirecional" class="hidden btn bg-blue-500 hover:bg-blue-600">Iniciar Chat Bidirecional</button>
+        <form id="chatForm" class="flex space-x-2">
+          <input type="text" id="mensagem" class="form flex-grow" placeholder="Digite sua mensagem..." required>
+          <button type="submit" class="btn">Enviar</button>
+        </form>
+      </div>
+      <div id="selecaoNome" class="hidden space-y-4">
+        <h2 class="text-xl font-semibold">Escolha seu nome</h2>
+        <form id="nomeForm" class="flex space-x-2">
+          <input type="text" id="nomeUsuario" class="form flex-grow" placeholder="Digite seu nome..." required>
+          <button type="submit" class="btn bg-blue-500 hover:bg-blue-600">Entrar no Chat</button>
+        </form>
+      </div>
+      <div id="chatBidirecional" class="hidden space-y-4">
+        <div id="statusChat" class="text-gray-500 mb-2"></div>
+        <div id="usuariosChat" class="text-sm text-gray-600 mb-2"></div>
+        <div id="mensagensChat" class="space-y-2 max-h-96 overflow-y-auto p-4 border rounded"></div>
+        <form id="chatBidirecionalForm" class="flex space-x-2">
+          <input type="text" id="mensagemChat" class="form flex-grow" placeholder="Digite sua mensagem..." required>
+          <button type="submit" class="btn">Enviar</button>
+        </form>
+        <button id="sairChat" class="btn bg-red-500 hover:bg-red-600">Sair do Chat</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const socket = io();
+    let contadorMensagens = parseInt(localStorage.getItem('contadorMensagens') || '0');
+
+    function adicionarMensagem(mensagem, isUsuario = false) {
+      const mensagens = document.getElementById('mensagens');
+      const div = document.createElement('div');
+      div.className = `p-2 rounded ${isUsuario ? 'bg-blue-100 ml-auto' : 'bg-gray-100'} max-w-[70%]`;
+      div.textContent = mensagem;
+      mensagens.appendChild(div);
+      mensagens.scrollTop = mensagens.scrollHeight;
+    }
+
+    function adicionarMensagemChat(nome, mensagem, isAdmin = false, isProprio = false) {
+      const mensagensChat = document.getElementById('mensagensChat');
+      const div = document.createElement('div');
+      div.className = `p-2 rounded ${isProprio ? 'bg-blue-100 ml-auto' : 'bg-gray-100'} max-w-[70%] ${isAdmin ? 'font-bold' : ''}`;
+      div.textContent = `${nome}: ${mensagem}`;
+      mensagensChat.appendChild(div);
+      mensagensChat.scrollTop = mensagensChat.scrollHeight;
+    }
+
+    function atualizarUsuarios(usuarios) {
+      const usuariosChat = document.getElementById('usuariosChat');
+      usuariosChat.textContent = `Usuários na sala: ${usuarios.map(u => u.nome + (u.isAdmin ? ' (Gerente)' : '')).join(', ')}`;
+    }
+
+    function atualizarInterface() {
+      const limiteMensagem = document.getElementById('limiteMensagem');
+      const iniciarChatBidirecional = document.getElementById('iniciarChatBidirecional');
+      if (contadorMensagens >= 5) {
+        limiteMensagem.textContent = 'Limite de 5 respostas atingido. Deseja conversar com outro usuário?';
+        limiteMensagem.classList.remove('hidden');
+        iniciarChatBidirecional.classList.remove('hidden');
+        document.getElementById('chatForm').classList.add('hidden');
+      } else {
+        limiteMensagem.classList.add('hidden');
+        iniciarChatBidirecional.classList.add('hidden');
+        document.getElementById('chatForm').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('chatForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mensagem = document.getElementById('mensagem').value.trim();
+      if (!mensagem) return;
+      adicionarMensagem(mensagem, true);
+      socket.emit('mensagem', { mensagem, contador: contadorMensagens });
+      document.getElementById('mensagem').value = '';
+    });
+
+    document.getElementById('iniciarChatBidirecional').addEventListener('click', () => {
+      document.getElementById('chatAssistente').classList.add('hidden');
+      document.getElementById('selecaoNome').classList.remove('hidden');
+    });
+
+    document.getElementById('nomeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeUsuario').value.trim();
+      if (!nome) return;
+      document.getElementById('selecaoNome').classList.add('hidden');
+      document.getElementById('chatBidirecional').classList.remove('hidden');
+      socket.emit('entrar_chat_bidirecional', nome);
+    });
+
+    document.getElementById('chatBidirecionalForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mensagem = document.getElementById('mensagemChat').value.trim();
+      if (!mensagem) return;
+      socket.emit('mensagem_chat', mensagem);
+      document.getElementById('mensagemChat').value = '';
+    });
+
+    document.getElementById('sairChat').addEventListener('click', () => {
+      socket.disconnect();
+      localStorage.setItem('contadorMensagens', '0');
+      window.location.reload();
+    });
+
+    socket.on('chat_status', (status) => {
+      document.getElementById('statusChat').textContent = status;
+    });
+
+    socket.on('usuarios', (usuarios) => {
+      atualizarUsuarios(usuarios);
+    });
+
+    socket.on('mensagem_chat', (data) => {
+      const isProprio = data.nome === document.getElementById('nomeUsuario').value + (data.isAdmin ? ' (Gerente)' : '');
+      adicionarMensagemChat(data.nome, data.mensagem, data.isAdmin, isProprio);
+    });
+
+    socket.on('resposta', (resposta) => {
+      adicionarMensagem(resposta);
+      contadorMensagens++;
+      localStorage.setItem('contadorMensagens', contadorMensagens);
+      atualizarInterface();
+    });
+
+    socket.on('connect', () => {
+      console.log('Conectado ao WebSocket');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Erro de conexão WebSocket:', err.message);
+      document.getElementById('statusChat').textContent = 'Erro de conexão. Tente novamente.';
+    });
+
+    atualizarInterface();
+  </script>
+</body>
+</html>

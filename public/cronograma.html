@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Cronograma</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav class="shadow">
+    <div class="container mx-auto px-4 py-2 flex justify-between">
+      <a href="/home.html" class="text-2xl font-bold">TaskFlow</a>
+      <div class="space-x-4">
+        <a href="/cronograma.html" class="hover:text-blue-500">Cronograma</a>
+        <a href="/chat.html" class="hover:text-blue-500">Chat</a>
+        <a href="/profile.html" class="hover:text-blue-500">Perfil</a>
+      </div>
+    </div>
+  </nav>
+  <div class="container mx-auto mt-6" style="padding: 60px;">
+    <div class="p-6 rounded-lg shadow" style="padding: 60px;">
+      <h2 class="text-xl font-semibold mb-4">Nova Tarefa</h2>
+      <form id="tarefaForm" class="space-y-4 form">
+        <input type="text" id="titulo" class="form" placeholder="Título da tarefa" required>
+        <textarea id="descricao" class="form" placeholder="Descrição"></textarea>
+        <select id="prioridade" class="form">
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <input type="datetime-local" id="prazo" class="form" required>
+        <button type="submit" class="btn">Adicionar</button>
+      </form>
+      <div id="mensagemTarefa" class="mt-2 text-sm"></div>
+    </div>
+    <div id="editarFormContainer" class="hidden mt-6 p-6 rounded-lg shadow">
+      <h2 class="text-xl font-semibold mb-4">Editar Tarefa</h2>
+      <form id="editarForm" class="space-y-4 form">
+        <input type="hidden" id="editarId">
+        <input type="text" id="editarTitulo" class="form" placeholder="Título da tarefa" required>
+        <textarea id="editarDescricao" class="form" placeholder="Descrição"></textarea>
+        <select id="editarPrioridade" class="form">
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <input type="datetime-local" id="editarPrazo" class="form" required>
+        <div class="flex space-x-2">
+          <button type="submit" class="btn">Salvar</button>
+          <button type="button" onclick="cancelarEdicao()" class="btn bg-gray-500 hover:bg-gray-600">Cancelar</button>
+        </div>
+      </form>
+    </div>
+    <div class="mt-4">
+      <select id="filtroPrioridade" onchange="carregarTarefas()" class="form" style="padding: 15px; border-radius: 5px;">
+        <option value="">Todas</option>
+        <option value="alta">Alta</option>
+        <option value="media">Média</option>
+        <option value="baixa">Baixa</option>
+      </select>
+    </div>
+    <div id="cronograma" class="mt-6 space-y-4"></div>
+    <div id="notificacao" class="hidden fixed bottom-4 right-4 notificacao"></div>
+  </div>
+  <script>
+    async function carregarTarefas() {
+      try {
+        const filtroPrioridade = document.getElementById('filtroPrioridade').value;
+        const url = filtroPrioridade ? `/api/tarefas?prioridade=${filtroPrioridade}` : '/api/tarefas';
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Erro ao carregar tarefas: ${response.status}`);
+        const tarefas = await response.json();
+        const cronograma = document.getElementById('cronograma');
+        cronograma.innerHTML = tarefas.length ? '' : '<p class="text-gray-500">Nenhuma tarefa encontrada.</p>';
+        tarefas.forEach(t => {
+          const card = document.createElement('div');
+          card.className = `card ${
+            t.prioridade === 'alta' ? 'bg-red-100' : 
+            t.prioridade === 'media' ? 'bg-yellow-100' : 
+            'bg-green-100'
+          }`;
+          card.innerHTML = `
+            <p class="font-semibold">${t.titulo}</p>
+            <p>${t.descricao || 'Sem descrição'}</p>
+            <p class="text-sm">Prioridade: ${t.prioridade} | Prazo: ${t.prazo}</p>
+            <div class="mt-2 flex space-x-2">
+              <button onclick="iniciarEdicao(${t.id}, '${t.titulo}', '${t.descricao || ''}', '${t.prioridade}', '${t.prazo.replace(' ', 'T')}')" class="text-blue-500 hover:text-blue-700">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button onclick="excluirTarefa(${t.id})" class="text-red-500 hover:text-red-700">
+                <i class="fas fa-trash"></i> Excluir
+              </button>
+            </div>
+          `;
+          cronograma.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar tarefas:', err);
+        document.getElementById('cronograma').innerHTML = '<p class="text-red-500">Erro ao carregar tarefas</p>';
+      }
+    }
+
+    function iniciarEdicao(id, titulo, descricao, prioridade, prazo) {
+      document.getElementById('editarId').value = id;
+      document.getElementById('editarTitulo').value = titulo;
+      document.getElementById('editarDescricao').value = descricao;
+      document.getElementById('editarPrioridade').value = prioridade;
+      document.getElementById('editarPrazo').value = prazo;
+      document.getElementById('editarFormContainer').classList.remove('hidden');
+      document.getElementById('tarefaForm').classList.add('hidden');
+      document.getElementById('mensagemTarefa').textContent = '';
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('editarFormContainer').classList.add('hidden');
+      document.getElementById('tarefaForm').classList.remove('hidden');
+      document.getElementById('editarForm').reset();
+      document.getElementById('mensagemTarefa').textContent = '';
+    }
+
+    document.getElementById('tarefaForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const mensagemTarefa = document.getElementById('mensagemTarefa');
+      const titulo = document.getElementById('titulo').value.trim();
+      const descricao = document.getElementById('descricao').value.trim();
+      const prioridade = document.getElementById('prioridade').value;
+      const prazo = document.getElementById('prazo').value.replace('T', ' ');
+      if (!titulo || !prazo) {
+        mensagemTarefa.textContent = 'Por favor, preencha título e prazo.';
+        mensagemTarefa.className = 'mt-2 text-sm text-red-500';
+        return;
+      }
+      try {
+        console.log('Adicionando tarefa:', { titulo, descricao, prioridade, prazo });
+        const response = await fetch('/api/tarefas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titulo, descricao, prioridade, prazo })
+        });
+        if (!response.ok) {
+          const erro = await response.json();
+          throw new Error(`Erro ao adicionar tarefa: ${erro.error || response.status}`);
+        }
+        await carregarTarefas();
+        document.getElementById('tarefaForm').reset();
+        mensagemTarefa.textContent = 'Tarefa adicionada com sucesso!';
+        mensagemTarefa.className = 'mt-2 text-sm text-green-500';
+        setTimeout(() => mensagemTarefa.textContent = '', 3000);
+      } catch (err) {
+        console.error('Erro ao adicionar tarefa:', err);
+        mensagemTarefa.textContent = `Erro: ${err.message}`;
+        mensagemTarefa.className = 'mt-2 text-sm text-red-500';
+      }
+    });
+
+    document.getElementById('editarForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const mensagemTarefa = document.getElementById('mensagemTarefa');
+      const id = parseInt(document.getElementById('editarId').value);
+      const titulo = document.getElementById('editarTitulo').value.trim();
+      const descricao = document.getElementById('editarDescricao').value.trim();
+      const prioridade = document.getElementById('editarPrioridade').value;
+      const prazo = document.getElementById('editarPrazo').value.replace('T', ' ');
+      if (!titulo || !prazo) {
+        mensagemTarefa.textContent = 'Por favor, preencha título e prazo.';
+        mensagemTarefa.className = 'mt-2 text-sm text-red-500';
+        return;
+      }
+      try {
+        console.log('Editando tarefa:', { id, titulo, descricao, prioridade, prazo });
+        const response = await fetch(`/api/tarefas/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titulo, descricao, prioridade, prazo })
+        });
+        if (!response.ok) {
+          const erro = await response.json();
+          throw new Error(`Erro ao editar tarefa: ${erro.error || response.status}`);
+        }
+        await carregarTarefas();
+        cancelarEdicao();
+        mensagemTarefa.textContent = 'Tarefa editada com sucesso!';
+        mensagemTarefa.className = 'mt-2 text-sm text-green-500';
+        setTimeout(() => mensagemTarefa.textContent = '', 3000);
+      } catch (err) {
+        console.error('Erro ao editar tarefa:', err);
+        mensagemTarefa.textContent = `Erro: ${err.message}`;
+        mensagemTarefa.className = 'mt-2 text-sm text-red-500';
+      }
+    });
+
+    async function excluirTarefa(id) {
+      if (!confirm('Excluir tarefa?')) return;
+      const mensagemTarefa = document.getElementById('mensagemTarefa');
+      try {
+        console.log('Excluindo tarefa:', id);
+        const response = await fetch(`/api/tarefas/${id}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          const erro = await response.json();
+          throw new Error(`Erro ao excluir tarefa: ${erro.error || response.status}`);
+        }
+        await carregarTarefas();
+        mensagemTarefa.textContent = 'Tarefa excluída com sucesso!';
+        mensagemTarefa.className = 'mt-2 text-sm text-green-500';
+        setTimeout(() => mensagemTarefa.textContent = '', 3000);
+      } catch (err) {
+        console.error('Erro ao excluir tarefa:', err);
+        mensagemTarefa.textContent = `Erro: ${err.message}`;
+        mensagemTarefa.className = 'mt-2 text-sm text-red-500';
+      }
+    }
+
+    const socket = io();
+    socket.on('notificacao', (data) => {
+      const notificacao = document.getElementById('notificacao');
+      notificacao.innerText = data.mensagem;
+      notificacao.classList.remove('hidden');
+      setTimeout(() => notificacao.classList.add('hidden'), 5000);
+    });
+
+    document.addEventListener('DOMContentLoaded', carregarTarefas);
+  </script>
+</body>
+</html>

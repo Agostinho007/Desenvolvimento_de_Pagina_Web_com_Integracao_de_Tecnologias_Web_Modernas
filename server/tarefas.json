@@ -26,5 +26,12 @@
     "descricao": "Vou assistir um filme de anime de noite",
     "prioridade": "media",
     "prazo": "2025-05-08 18:46"
+  },
+  {
+    "id": 6,
+    "titulo": "Ler",
+    "prioridade": "alta",
+    "prazo": "2025-05-30T18:35:00.000Z",
+    "descricao": "You, Bodies"
   }
 ]

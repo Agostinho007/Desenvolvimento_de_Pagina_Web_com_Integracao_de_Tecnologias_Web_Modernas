@@ -8,13 +8,30 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
+
+// Configuração de origens permitidas para CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'https://taskflow.onrender.com', 'https://desenvolvimento-de-pagina-web-com-6brk.onrender.com'];
+console.log('Origens permitidas para CORS:', allowedOrigins);
+
 const io = socketIo(server, {
-  transports: ['websocket'],
-  cors: { origin: '*' }
+  transports: ['websocket', 'polling'],
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
 });
 
 server.keepAliveTimeout = 120000;
 server.headersTimeout = 120000;
+
+// Middleware para logar requisições ao Socket.IO
+app.use('/socket.io', (req, res, next) => {
+  console.log(`Requisição Socket.IO: ${req.method} ${req.url} ${req.headers['user-agent']}`);
+  next();
+});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -152,16 +169,29 @@ const salas = new Map();
 // Verificação de prazos e envio de notificações
 setInterval(async () => {
   try {
+    console.log('Verificando prazos...');
     const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
     const tarefas = JSON.parse(data);
+    console.log(`Tarefas lidas: ${tarefas.length}`);
     const now = new Date();
     tarefas.forEach(tarefa => {
       try {
-        const prazo = new Date(tarefa.prazo);
-        if (isNaN(prazo.getTime())) return; // Ignora prazos inválidos
+        // Tentar converter prazos não-ISO para ISO
+        let prazoStr = tarefa.prazo;
+        if (!prazoStr.endsWith('Z') && !prazoStr.includes('T')) {
+          prazoStr = prazoStr.replace(' ', 'T') + ':00.000Z';
+        }
+        const prazo = new Date(prazoStr);
+        if (isNaN(prazo.getTime())) {
+          console.log(`Prazo inválido para tarefa ${tarefa.id}: ${tarefa.prazo}`);
+          return;
+        }
         const diffMinutes = (prazo - now) / (1000 * 60);
+        console.log(`Tarefa ${tarefa.id}: ${tarefa.titulo}, Diff: ${diffMinutes} minutos`);
         if (diffMinutes > 0 && diffMinutes <= 30) {
-          io.emit('notificacao', { mensagem: `Tarefa '${tarefa.titulo}' vence em ${Math.round(diffMinutes)} minutos!` });
+          const mensagem = `Tarefa '${tarefa.titulo}' vence em ${Math.round(diffMinutes)} minutos!`;
+          console.log(`Enviando notificação: ${mensagem}`);
+          io.emit('notificacao', { mensagem });
         }
       } catch (err) {
         console.error(`Erro ao processar prazo da tarefa ${tarefa.id}:`, err);
@@ -170,7 +200,7 @@ setInterval(async () => {
   } catch (err) {
     console.error('Erro ao verificar prazos:', err);
   }
-}, 30000);
+}, 10000); // Intervalo de 10 segundos para testes
 
 io.on('connection', (socket) => {
   console.log(`Cliente conectado: ${socket.id}`);
@@ -404,7 +434,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('testar_notificacao', (data) => {
-    io.emit('testar_notificacao', data);
+    console.log('Teste de notificação recebido:', data);
+    io.emit('notificacao', data);
   });
 });
 

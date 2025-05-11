@@ -11,7 +11,7 @@
   <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
       <a class="navbar-brand" href="/home.html">TaskFlow</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Close">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -100,6 +100,19 @@
     let tarefaParaExcluir = null;
     let tarefaParaEditar = null;
 
+    socket.on('connect', () => {
+      console.log('Conectado ao Socket.IO');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Erro de conexão Socket.IO:', err.message, err);
+    });
+
+    socket.on('notificacao', (data) => {
+      console.log('Notificação recebida:', data);
+      exibirAlerta(data.mensagem, 'warning');
+    });
+
     function exibirAlerta(mensagem, tipo = 'success') {
       const alertContainer = document.getElementById('alertContainer');
       const alerta = document.createElement('div');
@@ -113,35 +126,47 @@
       setTimeout(() => alerta.remove(), 3000);
     }
 
-    socket.on('notificacao', (data) => {
-      exibirAlerta(data.mensagem, 'warning');
-    });
-
     document.getElementById('tarefaForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const tarefa = {
-        titulo: document.getElementById('titulo').value.trim(),
-        descricao: document.getElementById('descricao').value.trim(),
-        prioridade: document.getElementById('prioridade').value,
-        prazo: new Date(document.getElementById('prazo').value).toISOString()
-      };
-      try {
-        const response = await fetch('/api/tarefas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(tarefa)
-        });
-        if (response.ok) {
-          exibirAlerta('Tarefa criada com sucesso!');
-          document.getElementById('tarefaForm').reset();
-          carregarTarefas();
-        } else {
-          const errorData = await response.json();
-          exibirAlerta(`Erro ao criar tarefa: ${errorData.error || 'Erro desconhecido'}`, 'danger');
+      const isEditing = document.getElementById('tituloEdit');
+      if (isEditing) {
+        // Modo de edição: coletar dados e abrir modal
+        tarefaParaEditar = {
+          id: tarefaParaEditar?.id,
+          titulo: document.getElementById('tituloEdit').value.trim(),
+          descricao: document.getElementById('descricaoEdit').value.trim(),
+          prioridade: document.getElementById('prioridadeEdit').value,
+          prazo: new Date(document.getElementById('prazoEdit').value).toISOString()
+        };
+        console.log('Dados para edição:', tarefaParaEditar);
+        new bootstrap.Modal(document.getElementById('modalEditar')).show();
+      } else {
+        // Modo de criação: enviar POST diretamente
+        const tarefa = {
+          titulo: document.getElementById('titulo').value.trim(),
+          descricao: document.getElementById('descricao').value.trim(),
+          prioridade: document.getElementById('prioridade').value,
+          prazo: new Date(document.getElementById('prazo').value).toISOString()
+        };
+        try {
+          console.log('Enviando tarefa para criação:', tarefa);
+          const response = await fetch('/api/tarefas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tarefa)
+          });
+          if (response.ok) {
+            exibirAlerta('Tarefa criada com sucesso!');
+            document.getElementById('tarefaForm').reset();
+            carregarTarefas();
+          } else {
+            const errorData = await response.json();
+            exibirAlerta(`Erro ao criar tarefa: ${errorData.error || 'Erro desconhecido'}`, 'danger');
+          }
+        } catch (err) {
+          console.error('Erro ao adicionar tarefa:', err);
+          exibirAlerta('Erro ao criar tarefa: Falha na conexão', 'danger');
         }
-      } catch (err) {
-        console.error('Erro ao adicionar tarefa:', err);
-        exibirAlerta('Erro ao criar tarefa: Falha na conexão', 'danger');
       }
     });
 
@@ -198,19 +223,8 @@
               <button type="submit" class="btn btn-primary">Salvar</button>
               <button type="button" class="btn btn-danger" id="cancelarEdicao">Cancelar</button>
             `;
-            document.getElementById('tarefaForm').onsubmit = async (e) => {
-              e.preventDefault();
-              tarefaParaEditar = {
-                id,
-                titulo: document.getElementById('tituloEdit').value.trim(),
-                descricao: document.getElementById('descricaoEdit').value.trim(),
-                prioridade: document.getElementById('prioridadeEdit').value,
-                prazo: new Date(document.getElementById('prazoEdit').value).toISOString()
-              };
-              new bootstrap.Modal(document.getElementById('modalEditar')).show();
-            };
+            tarefaParaEditar = { id };
             document.getElementById('cancelarEdicao').addEventListener('click', () => {
-              documentJesusWalks('tarefaForm').reset();
               document.getElementById('tarefaForm').innerHTML = `
                 <div class="mb-3">
                   <input type="text" id="titulo" class="form-control" placeholder="Título da tarefa" required>
@@ -230,6 +244,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Adicionar Tarefa</button>
               `;
+              carregarTarefas();
             });
           });
         });
@@ -265,6 +280,7 @@
 
     document.getElementById('confirmarEditar').addEventListener('click', async () => {
       try {
+        console.log('Enviando requisição PUT para editar tarefa:', tarefaParaEditar);
         const response = await fetch(`/api/tarefas/${tarefaParaEditar.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -273,7 +289,7 @@
         if (response.ok) {
           exibirAlerta('Tarefa editada com sucesso!');
           bootstrap.Modal.getInstance(document.getElementById('modalEditar')).hide();
-          document.getElementById('tarefaForm').reset();
+          // Restaurar formulário para modo de criação
           document.getElementById('tarefaForm').innerHTML = `
             <div class="mb-3">
               <input type="text" id="titulo" class="form-control" placeholder="Título da tarefa" required>
@@ -294,8 +310,10 @@
             <button type="submit" class="btn btn-primary">Adicionar Tarefa</button>
           `;
           carregarTarefas();
+          tarefaParaEditar = null;
         } else {
           const errorData = await response.json();
+          console.error('Erro na resposta do servidor:', errorData);
           exibirAlerta(`Erro ao editar tarefa: ${errorData.error || 'Erro desconhecido'}`, 'danger');
         }
       } catch (err) {

@@ -387,23 +387,6 @@ io.on('connection', (socket) => {
   });
 });
 
-setInterval(async () => {
-  try {
-    const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
-    const tarefas = JSON.parse(data);
-    const agora = new Date();
-    const trintaMinutosDepois = new Date(agora.getTime() + 30 * 60 * 1000);
-    tarefas.forEach(tarefa => {
-      const prazo = new Date(tarefa.prazo);
-      if (prazo >= agora && prazo <= trintaMinutosDepois) {
-        io.emit('notificacao', { mensagem: `Tarefa "${tarefa.titulo}" vence em 30 minutos!` });
-      }
-    });
-  } catch (err) {
-    console.error('Erro ao verificar tarefas:', err);
-  }
-}, 60000);
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

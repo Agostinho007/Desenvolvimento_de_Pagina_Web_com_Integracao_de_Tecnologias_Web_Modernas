@@ -9,13 +9,12 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  transports: ['websocket'], // Usar WebSocket puro no Render
-  cors: { origin: '*' } // Permitir conexões do Render
+  transports: ['websocket'],
+  cors: { origin: '*' }
 });
 
-// Configurar timeouts para Render
-server.keepAliveTimeout = 120000; // 120 segundos
-server.headersTimeout = 120000; // 120 segundos
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 120000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -28,7 +27,6 @@ app.get('/chat_gerente.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/chat_gerente.html'));
 });
 
-// Rota para obter dados do perfil
 app.get('/api/perfil/:nome', async (req, res) => {
   const { nome } = req.params;
   try {
@@ -46,7 +44,6 @@ app.get('/api/perfil/:nome', async (req, res) => {
   }
 });
 
-// Rota para atualizar a bio
 app.post('/api/perfil/:nome/bio', async (req, res) => {
   const { nome } = req.params;
   const { bio } = req.body;
@@ -69,7 +66,6 @@ app.post('/api/perfil/:nome/bio', async (req, res) => {
 
 app.use('/api', routes);
 
-// Validar PIN do gerente
 app.post('/api/validar-pin', async (req, res) => {
   const { pin } = req.body;
   try {
@@ -86,7 +82,6 @@ app.post('/api/validar-pin', async (req, res) => {
   }
 });
 
-// Mapeamento de intenções
 const intencoes = {
   saudacao: {
     palavras: ['oi', 'olá', 'bom dia', 'boa tarde', 'boa noite'],
@@ -127,7 +122,6 @@ const intencoes = {
   }
 };
 
-// Processar mensagens do chat normal
 async function responderMensagem(mensagem, contador, nome) {
   const tokens = mensagem.toLowerCase().trim().split(/\s+/);
   const intencoesDetectadas = [];
@@ -149,11 +143,11 @@ async function responderMensagem(mensagem, contador, nome) {
   }
 }
 
-// Gerenciamento de salas e usuários
 const usuariosFinalizados = new Map();
 const usuariosEmChat = new Map();
 let socketGerente = null;
 const mensagensEnviadas = new Map();
+const salas = new Map();
 
 io.on('connection', (socket) => {
   console.log(`Cliente conectado: ${socket.id}`);
@@ -165,19 +159,39 @@ io.on('connection', (socket) => {
 
   socket.on('mensagem', async (data) => {
     const { mensagem, contador, nome } = data;
+    if (contador >= 4) {
+      if (usuariosEmChat.has(socket.id)) {
+        // Usuário está em chat com gerente, redirecionar para mensagem_chat
+        const salaId = usuariosEmChat.get(socket.id);
+        const mensagemId = uuidv4();
+        if (mensagensEnviadas.has(mensagemId)) return;
+        mensagensEnviadas.set(mensagemId, true);
+        io.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
+        console.log(`Mensagem redirecionada para sala ${salaId} de ${socket.nome}: ${mensagem} (ID: ${mensagemId})`);
+      } else {
+        // Limite atingido, notificar para aguardar gerente
+        socket.emit('resposta', 'Você atingiu o limite de 5 mensagens. Aguarde o gerente iniciar o chat.');
+        if (!usuariosFinalizados.has(socket.id)) {
+          usuariosFinalizados.set(socket.id, { nome, socket });
+          if (socketGerente) {
+            socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+              .map(([id, { nome }]) => ({ id, nome })));
+          }
+        }
+      }
+      return;
+    }
     if (usuariosEmChat.has(socket.id)) {
       socket.emit('resposta', 'Você está em um chat com o gerente. Use o chat bidirecional.');
       return;
     }
     const resposta = await responderMensagem(mensagem, contador, nome);
     socket.emit('resposta', resposta);
-    if (contador >= 4) {
-      if (!usuariosEmChat.has(socket.id)) {
-        usuariosFinalizados.set(socket.id, { nome, socket });
-        if (socketGerente) {
-          socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
-            .map(([id, { nome }]) => ({ id, nome })));
-        }
+    if (contador === 3) { // Antes da 5ª mensagem, preparar para o limite
+      usuariosFinalizados.set(socket.id, { nome, socket });
+      if (socketGerente) {
+        socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+          .map(([id, { nome }]) => ({ id, nome })));
       }
     }
   });
@@ -249,6 +263,7 @@ io.on('connection', (socket) => {
     usuario.socket.salaGerente = salaId;
     io.to(salaId).emit('chat_status', `Chat iniciado com ${usuario.nome}.`);
     usuario.socket.emit('bloquear_chat_bidirecional', true);
+    usuario.socket.emit('resposta', 'O gerente iniciou um chat com você. Envie suas mensagens.');
     console.log(`Chat iniciado na sala ${salaId} com ${usuario.nome}`);
 
     socket.removeAllListeners('mensagem_chat');
@@ -372,9 +387,6 @@ io.on('connection', (socket) => {
   });
 });
 
-const salas = new Map();
-
-// Notificações
 setInterval(async () => {
   try {
     const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');

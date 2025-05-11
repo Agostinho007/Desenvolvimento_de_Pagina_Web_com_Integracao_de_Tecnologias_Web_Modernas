@@ -4,255 +4,383 @@ const socketIo = require('socket.io');
 const path = require('path');
 const fs = require('fs').promises;
 const routes = require('./routes');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  reconnection: false // Desativar reconexões automáticas
+});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {
-  console.log('Servindo home.html para rota /');
   res.sendFile(path.join(__dirname, '../public/home.html'));
+});
+
+app.get('/chat_gerente.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/chat_gerente.html'));
+});
+
+// Rota para obter dados do perfil
+app.get('/api/perfil/:nome', async (req, res) => {
+  const { nome } = req.params;
+  try {
+    const data = await fs.readFile(path.join(__dirname, 'perfis.json'), 'utf8');
+    const perfis = JSON.parse(data);
+    const perfil = perfis.find(p => p.nome.toLowerCase() === nome.toLowerCase());
+    if (perfil) {
+      res.json({ success: true, perfil });
+    } else {
+      res.status(404).json({ success: false, error: 'Perfil não encontrado' });
+    }
+  } catch (err) {
+    console.error('Erro ao ler perfis.json:', err);
+    res.status(500).json({ success: false, error: err.code === 'ENOENT' ? 'Arquivo de perfis não encontrado' : 'Erro interno' });
+  }
+});
+
+// Rota para atualizar a bio
+app.post('/api/perfil/:nome/bio', async (req, res) => {
+  const { nome } = req.params;
+  const { bio } = req.body;
+  try {
+    const data = await fs.readFile(path.join(__dirname, 'perfis.json'), 'utf8');
+    let perfis = JSON.parse(data);
+    const perfilIndex = perfis.findIndex(p => p.nome.toLowerCase() === nome.toLowerCase());
+    if (perfilIndex === -1) {
+      res.status(404).json({ success: false, error: 'Perfil não encontrado' });
+      return;
+    }
+    perfis[perfilIndex].bio = bio;
+    await fs.writeFile(path.join(__dirname, 'perfis.json'), JSON.stringify(perfis, null, 2));
+    res.json({ success: true, perfil: perfis[perfilIndex] });
+  } catch (err) {
+    console.error('Erro ao atualizar perfis.json:', err);
+    res.status(500).json({ success: false, error: err.code === 'ENOENT' ? 'Arquivo de perfis não encontrado' : 'Erro interno' });
+  }
 });
 
 app.use('/api', routes);
 
-// Mapeamento de intenções com palavras-chave e funções de resposta
+// Validar PIN do gerente
+app.post('/api/validar-pin', async (req, res) => {
+  const { pin } = req.body;
+  try {
+    const data = await fs.readFile(path.join(__dirname, 'gerente.json'), 'utf8');
+    const config = JSON.parse(data);
+    if (pin === config.pin) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ success: false, error: 'PIN inválido' });
+    }
+  } catch (err) {
+    console.error('Erro ao validar PIN:', err);
+    res.status(500).json({ success: false, error: err.code === 'ENOENT' ? 'Arquivo de configuração não encontrado' : 'Erro interno' });
+  }
+});
+
+// Mapeamento de intenções
 const intencoes = {
   saudacao: {
-    palavras: ['oi', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'hello', 'hi'],
+    palavras: ['oi', 'olá', 'bom dia', 'boa tarde', 'boa noite'],
     responder: () => 'Olá! Como posso ajudar com suas tarefas hoje?'
   },
   apresentacao: {
-    palavras: ['quem', 'você', 'voce', 'assistente', 'o que faz'],
-    responder: () => 'Sou o assistente do TaskFlow, criado para ajudar a gerenciar suas tarefas! Posso listar tarefas, dar dicas, ou resolver problemas. Tente algo como "mostre tarefas de hoje" ou "como adicionar tarefa".'
+    palavras: ['quem', 'você', 'assistente'],
+    responder: () => 'Sou o assistente do TaskFlow, criado para gerenciar suas tarefas! Tente "mostre tarefas de hoje" ou "como adicionar tarefa".'
   },
   dicas: {
-    palavras: ['como', 'usar', 'funciona', 'dicas', 'ajuda', 'tutorial'],
-    responder: () => 'No TaskFlow, você pode:\n1. **Cronograma**: Adicione tarefas com título, prioridade (alta, média, baixa) e prazo. Filtre por prioridade.\n2. **Chat**: Pergunte sobre tarefas (ex.: "tarefas de hoje") ou peça ajuda.\n3. **Perfil**: Atualize sua bio e veja estatísticas.\n4. **Notificações**: Alertas 30 minutos antes do prazo.\nTente criar uma tarefa no Cronograma!'
-  },
-  problemas: {
-    palavras: ['erro', 'não funciona', 'problema', 'bug', 'falha'],
-    responder: () => 'Desculpe pelo problema! Tente:\n1. **Chat não responde**: Verifique se o servidor está rodando (`node app.js` em `PRO/server`). Recarregue a página.\n2. **Tarefas não aparecem**: Confirme que `tarefas.json` existe em `PRO/server`.\n3. **Erro ao carregar**: Verifique os arquivos HTML em `PRO/public`.\nSe persistir, envie a mensagem de erro.'
+    palavras: ['como', 'usar', 'dicas', 'ajuda'],
+    responder: () => 'No TaskFlow, você pode:\n1. **Cronograma**: Adicione tarefas com título, descrição, prioridade e prazo.\n2. **Chat**: Pergunte sobre tarefas ou peça ajuda.\nTente criar uma tarefa!'
   },
   tarefas: {
-    palavras: ['tarefa', 'tarefas', 'lista', 'mostre', 'quais'],
+    palavras: ['tarefa', 'tarefas', 'lista', 'mostre'],
     responder: async (tokens) => {
       try {
         const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
         const tarefas = JSON.parse(data);
         let filtro = tarefas;
 
-        if (tokens.includes('alta') || tokens.includes('urgente') || tokens.includes('importante')) {
-          filtro = filtro.filter(t => t.prioridade === 'alta');
-        } else if (tokens.includes('media') || tokens.includes('média')) {
-          filtro = filtro.filter(t => t.prioridade === 'media');
-        } else if (tokens.includes('baixa')) {
-          filtro = filtro.filter(t => t.prioridade === 'baixa');
-        }
+        if (tokens.includes('alta')) filtro = filtro.filter(t => t.prioridade === 'alta');
+        else if (tokens.includes('media') || tokens.includes('média')) filtro = filtro.filter(t => t.prioridade === 'media');
+        else if (tokens.includes('baixa')) filtro = filtro.filter(t => t.prioridade === 'baixa');
 
-        if (tokens.includes('hoje') || tokens.includes('today')) {
+        if (tokens.includes('hoje')) {
           const hoje = new Date().toISOString().split('T')[0];
           filtro = filtro.filter(t => t.prazo.startsWith(hoje));
         }
 
-        if (tokens.includes('vence') || tokens.includes('vencem') || tokens.includes('próxima') || tokens.includes('proxima')) {
-          const agora = new Date();
-          const trintaMinutosDepois = new Date(agora.getTime() + 30 * 60 * 1000);
-          filtro = filtro.filter(t => {
-            const prazo = new Date(t.prazo);
-            return !isNaN(prazo) && prazo >= agora && prazo <= trintaMinutosDepois;
-          });
-        }
-
-        if (filtro.length === 0) {
-          return 'Nenhuma tarefa encontrada com esses critérios.';
-        }
-        return filtro.map(t => `${t.titulo} (${t.prioridade}, Prazo: ${t.prazo})`).join('\n');
+        return filtro.length === 0 ? 'Nenhuma tarefa encontrada.' :
+          filtro.map(t => `${t.titulo} (${t.prioridade}, Prazo: ${t.prazo}, Descrição: ${t.descricao || 'Sem descrição'})`).join('\n');
       } catch (err) {
         console.error('Erro ao consultar tarefas:', err);
-        return 'Erro ao consultar tarefas. Verifique se `tarefas.json` existe.';
-      }
-    }
-  },
-  adicionar: {
-    palavras: ['adicionar', 'nova', 'criar', 'tarefa'],
-    responder: () => 'Para adicionar uma tarefa:\n1. Acesse o Cronograma.\n2. Preencha título, prioridade (alta, média, baixa) e prazo.\n3. Clique em "Adicionar".\nQuer que eu te guie com um exemplo?'
-  },
-  priorizar: {
-    palavras: ['priorizar', 'prioridade', 'organizar', 'urgente'],
-    responder: () => 'Para priorizar, marque tarefas como "alta" no Cronograma. Use o filtro de prioridade para focar nas mais importantes. Quer ver tarefas de alta prioridade agora?'
-  },
-  fazer_hoje: {
-    palavras: ['fazer', 'hoje', 'agora', 'tarefa hoje'],
-    responder: async (tokens) => {
-      try {
-        const hoje = new Date().toISOString().split('T')[0];
-        const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
-        const tarefas = JSON.parse(data);
-        let urgentes = tarefas.filter(t => t.prazo.startsWith(hoje));
-        if (tokens.includes('alta') || tokens.includes('urgente')) {
-          urgentes = urgentes.filter(t => t.prioridade === 'alta');
-        }
-        return urgentes.length
-          ? `Priorize hoje:\n${urgentes.map(t => `${t.titulo} (${t.prioridade})`).join('\n')}`
-          : 'Nenhuma tarefa urgente hoje. Quer adicionar uma nova tarefa?';
-      } catch (err) {
-        console.error('Erro ao consultar tarefas:', err);
-        return 'Erro ao consultar tarefas. Verifique se `tarefas.json` existe.';
+        return 'Erro ao consultar tarefas.';
       }
     }
   }
 };
 
-// Função para processar mensagens e gerar respostas
-async function responderMensagem(mensagem, contador) {
-  console.log('Mensagem recebida:', mensagem, 'Contador:', contador);
-  if (contador >= 5) {
-    return 'Limite de 5 respostas atingido. Deseja conversar com outro usuário? Clique em "Iniciar Chat Bidirecional" no chat.';
-  }
+// Processar mensagens do chat normal
+async function responderMensagem(mensagem, contador, nome) {
   const tokens = mensagem.toLowerCase().trim().split(/\s+/);
   const intencoesDetectadas = [];
 
   for (const [nome, { palavras, responder }] of Object.entries(intencoes)) {
-    if (palavras.some(p => tokens.includes(p))) {
-      intencoesDetectadas.push({ nome, responder });
-    }
+    if (palavras.some(p => tokens.includes(p))) intencoesDetectadas.push({ nome, responder });
   }
 
-  if (intencoesDetectadas.length === 0) {
-    return 'Não entendi sua pergunta. Tente algo como "mostre tarefas de hoje", "como adicionar tarefa", ou "oi".';
-  }
+  if (!intencoesDetectadas.length) return 'Não entendi. Tente "mostre tarefas de hoje" ou "oi".';
 
-  const prioridadeIntencoes = ['tarefas', 'fazer_hoje', 'adicionar', 'priorizar', 'dicas', 'problemas', 'apresentacao', 'saudacao'];
-  const intencaoPrincipal = intencoesDetectadas.sort((a, b) => {
-    return prioridadeIntencoes.indexOf(a.nome) - prioridadeIntencoes.indexOf(b.nome);
-  })[0];
+  const prioridadeIntencoes = ['tarefas', 'dicas', 'apresentacao', 'saudacao'];
+  const intencaoPrincipal = intencoesDetectadas.sort((a, b) => prioridadeIntencoes.indexOf(a.nome) - prioridadeIntencoes.indexOf(b.nome))[0];
 
   try {
-    const resposta = await intencaoPrincipal.responder(tokens);
-    console.log('Resposta gerada:', resposta);
-    return resposta;
+    return await intencaoPrincipal.responder(tokens);
   } catch (err) {
     console.error('Erro ao gerar resposta:', err);
-    return 'Desculpe, ocorreu um erro ao processar sua pergunta. Tente novamente.';
+    return 'Erro ao processar sua pergunta.';
   }
 }
 
-// Gerenciamento de salas para chat bidirecional
-const salas = new Map(); // Mapa de salas: { salaId: [{socket, nome, isAdmin}] }
+// Gerenciamento de salas e usuários
+const usuariosFinalizados = new Map();
+const usuariosEmChat = new Map();
+let socketGerente = null;
+const mensagensEnviadas = new Map();
 
 io.on('connection', (socket) => {
-  console.log('Novo cliente conectado:', socket.id);
+  console.log(`Cliente conectado: ${socket.id}`);
 
-  // Chat com assistente
-  socket.on('mensagem', async (data) => {
-    const { mensagem, contador } = data;
-    const resposta = await responderMensagem(mensagem, contador);
-    socket.emit('resposta', resposta);
+  socket.on('registrar_nome', (nome) => {
+    socket.nome = nome;
+    console.log(`Nome registrado: ${socket.id} -> ${nome}`);
   });
 
-  // Chat bidirecional
-  socket.on('entrar_chat_bidirecional', (nome) => {
-    console.log(`Cliente ${socket.id} solicitou chat bidirecional com nome: ${nome}`);
+  socket.on('mensagem', async (data) => {
+    const { mensagem, contador, nome } = data;
+    if (usuariosEmChat.has(socket.id)) {
+      socket.emit('resposta', 'Você está em um chat com o gerente. Use o chat bidirecional.');
+      return;
+    }
+    const resposta = await responderMensagem(mensagem, contador, nome);
+    socket.emit('resposta', resposta);
+    if (contador >= 4) {
+      if (!usuariosEmChat.has(socket.id)) {
+        usuariosFinalizados.set(socket.id, { nome, socket });
+        if (socketGerente) {
+          socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+            .map(([id, { nome }]) => ({ id, nome })));
+        }
+      }
+    }
+  });
+
+  socket.on('entrar_chat_bidirecional', () => {
+    if (usuariosEmChat.has(socket.id)) {
+      socket.emit('chat_status', 'Você está em um chat com o gerente. Não pode iniciar outro chat.');
+      socket.emit('bloquear_chat_bidirecional', true);
+      console.log(`Usuário ${socket.id} bloqueado de chat bidirecional: já em chat com gerente`);
+      return;
+    }
     let salaId = null;
     let salaEncontrada = false;
 
-    // Validar nome
-    const nomeLimpo = nome && nome.trim() ? nome.trim() : `Usuário-${Math.floor(Math.random() * 1000)}`;
-
-    // Procurar sala com menos de 2 usuários
     for (const [id, usuarios] of salas) {
-      if (usuarios.length < 2) {
+      if (usuarios.length < 2 && !id.startsWith('gerente-')) {
         salaId = id;
-        usuarios.push({ socket, nome: nomeLimpo, isAdmin: false });
+        usuarios.push(socket);
         salaEncontrada = true;
         break;
       }
     }
 
-    // Criar nova sala se necessário
     if (!salaEncontrada) {
       salaId = `sala-${Date.now()}`;
-      salas.set(salaId, [{ socket, nome: `${nomeLimpo} (Gerente)`, isAdmin: true }]);
+      salas.set(salaId, [socket]);
     }
 
     socket.join(salaId);
-    console.log(`Cliente ${socket.id} (${nomeLimpo}) entrou na sala ${salaId}, admin: ${salas.get(salaId).find(u => u.socket === socket).isAdmin}`);
-
-    // Notificar status
+    usuariosEmChat.set(socket.id, salaId);
     const usuariosNaSala = salas.get(salaId);
     if (usuariosNaSala.length === 1) {
       socket.emit('chat_status', 'Aguardando outro usuário...');
     } else if (usuariosNaSala.length === 2) {
-      io.to(salaId).emit('chat_status', 'Chat bidirecional iniciado! Digite sua mensagem.');
-      io.to(salaId).emit('usuarios', usuariosNaSala.map(u => ({ nome: u.nome, isAdmin: u.isAdmin })));
+      io.to(salaId).emit('chat_status', 'Chat bidirecional iniciado!');
+      io.to(salaId).emit('bloquear_chat_bidirecional', false);
     }
 
-    // Receber e enviar mensagens na sala
     socket.on('mensagem_chat', (mensagem) => {
-      const usuario = usuariosNaSala.find(u => u.socket === socket);
-      console.log(`Mensagem na sala ${salaId} de ${usuario.nome}: ${mensagem}`);
-      io.to(salaId).emit('mensagem_chat', { nome: usuario.nome, mensagem, isAdmin: usuario.isAdmin });
-    });
-
-    // Limpar sala quando o cliente desconectar
-    socket.on('disconnect', () => {
-      console.log(`Cliente ${socket.id} desconectado`);
-      if (salaId && salas.has(salaId)) {
-        const usuarios = salas.get(salaId);
-        const index = usuarios.findIndex(u => u.socket === socket);
-        if (index !== -1) {
-          const usuario = usuarios[index];
-          usuarios.splice(index, 1);
-          if (usuarios.length === 0) {
-            salas.delete(salaId);
-          } else {
-            io.to(salaId).emit('chat_status', `Usuário ${usuario.nome} desconectado. Aguardando novo usuário...`);
-            io.to(salaId).emit('usuarios', usuarios.map(u => ({ nome: u.nome, isAdmin: u.isAdmin })));
-          }
-        }
-      }
+      const mensagemId = uuidv4();
+      if (mensagensEnviadas.has(mensagemId)) return;
+      mensagensEnviadas.set(mensagemId, true);
+      socket.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
+      console.log(`Mensagem na sala ${salaId} de ${socket.nome}: ${mensagem} (ID: ${mensagemId})`);
     });
   });
 
-  // Notificações
+  socket.on('gerente_conectado', () => {
+    socketGerente = socket;
+    socket.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+      .map(([id, { nome }]) => ({ id, nome })));
+    console.log('Gerente conectado:', socket.id);
+  });
+
+  socket.on('selecionar_usuario', (userId) => {
+    const usuario = usuariosFinalizados.get(userId);
+    if (!usuario) {
+      socket.emit('chat_status', 'Usuário não disponível.');
+      console.log(`Usuário ${userId} não encontrado.`);
+      return;
+    }
+    usuariosFinalizados.delete(userId);
+    const salaId = `gerente-${socket.id}-${userId}`;
+    socket.join(salaId);
+    usuario.socket.join(salaId);
+    usuariosEmChat.set(userId, salaId);
+    usuariosEmChat.set(socket.id, salaId);
+    socket.salaGerente = salaId;
+    usuario.socket.salaGerente = salaId;
+    io.to(salaId).emit('chat_status', `Chat iniciado com ${usuario.nome}.`);
+    usuario.socket.emit('bloquear_chat_bidirecional', true);
+    console.log(`Chat iniciado na sala ${salaId} com ${usuario.nome}`);
+
+    socket.removeAllListeners('mensagem_chat');
+    usuario.socket.removeAllListeners('mensagem_chat');
+
+    socket.on('mensagem_chat', (mensagem) => {
+      const mensagemId = uuidv4();
+      if (mensagensEnviadas.has(mensagemId)) {
+        console.log(`Mensagem duplicada descartada no servidor: ${mensagemId}`);
+        return;
+      }
+      mensagensEnviadas.set(mensagemId, true);
+      io.to(salaId).emit('mensagem_chat', { id: socket.id, nome: 'Gerente', mensagem, mensagemId });
+      console.log(`Mensagem na sala ${salaId} de Gerente: ${mensagem} (ID: ${mensagemId})`);
+    });
+
+    usuario.socket.on('mensagem_chat', (mensagem) => {
+      const mensagemId = uuidv4();
+      if (mensagensEnviadas.has(mensagemId)) {
+        console.log(`Mensagem duplicada descartada no servidor: ${mensagemId}`);
+        return;
+      }
+      mensagensEnviadas.set(mensagemId, true);
+      socket.emit('mensagem_chat', { id: userId, nome: usuario.nome, mensagem, mensagemId });
+      usuario.socket.emit('mensagem_chat', { id: userId, nome: usuario.nome, mensagem, mensagemId });
+      console.log(`Mensagem na sala ${salaId} de ${usuario.nome}: ${mensagem} (ID: ${mensagemId})`);
+    });
+
+    if (socketGerente) {
+      socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+        .map(([id, { nome }]) => ({ id, nome })));
+    }
+  });
+
+  socket.on('sair_chat', () => {
+    const salaId = usuariosEmChat.get(socket.id);
+    if (salaId) {
+      io.to(salaId).emit('chat_status', 'Chat encerrado.');
+      io.to(salaId).emit('bloquear_chat_bidirecional', false);
+      const usuariosNaSala = salas.get(salaId);
+      if (usuariosNaSala) {
+        usuariosNaSala.forEach(s => {
+          s.leave(salaId);
+          usuariosEmChat.delete(s.id);
+          s.removeAllListeners('mensagem_chat');
+          if (s !== socketGerente && !usuariosFinalizados.has(s.id)) {
+            usuariosFinalizados.set(s.id, { nome: s.nome, socket: s });
+          }
+        });
+        salas.delete(salaId);
+      } else if (salaId.startsWith('gerente-')) {
+        socket.leave(salaId);
+        usuariosEmChat.delete(socket.id);
+        socket.removeAllListeners('mensagem_chat');
+        const userId = salaId.split('-')[2];
+        const usuario = io.sockets.sockets.get(userId);
+        if (usuario) {
+          usuario.leave(salaId);
+          usuariosEmChat.delete(userId);
+          usuario.removeAllListeners('mensagem_chat');
+          if (!usuariosFinalizados.has(userId)) {
+            usuariosFinalizados.set(userId, { nome: usuario.nome || 'Anônimo', socket: usuario });
+          }
+        }
+      }
+      if (socketGerente) {
+        socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+          .map(([id, { nome }]) => ({ id, nome })));
+      }
+      console.log(`Chat encerrado na sala ${salaId}`);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Cliente desconectado: ${socket.id}`);
+    usuariosFinalizados.delete(socket.id);
+    const salaId = usuariosEmChat.get(socket.id);
+    if (salaId) {
+      io.to(salaId).emit('chat_status', 'Outro usuário desconectado.');
+      io.to(salaId).emit('bloquear_chat_bidirecional', false);
+      const usuariosNaSala = salas.get(salaId);
+      if (usuariosNaSala) {
+        const index = usuariosNaSala.indexOf(socket);
+        if (index !== -1) {
+          usuariosNaSala.splice(index, 1);
+          if (usuariosNaSala.length === 0) {
+            salas.delete(salaId);
+          } else {
+            usuariosNaSala.forEach(s => {
+              usuariosEmChat.delete(s.id);
+              s.removeAllListeners('mensagem_chat');
+            });
+          }
+        }
+      } else if (salaId.startsWith('gerente-')) {
+        const userId = salaId.split('-')[2];
+        const usuario = io.sockets.sockets.get(userId);
+        if (usuario) {
+          usuario.leave(salaId);
+          usuariosEmChat.delete(userId);
+          usuario.removeAllListeners('mensagem_chat');
+          if (!usuariosFinalizados.has(userId)) {
+            usuariosFinalizados.set(userId, { nome: usuario.nome || 'Anônimo', socket: usuario });
+          }
+        }
+        usuariosEmChat.delete(socket.id);
+        socket.removeAllListeners('mensagem_chat');
+      }
+    }
+    if (socket === socketGerente) {
+      socketGerente = null;
+      console.log('Gerente desconectado');
+    }
+    if (socketGerente) {
+      socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())
+        .map(([id, { nome }]) => ({ id, nome })));
+    }
+  });
+
   socket.on('testar_notificacao', (data) => {
     io.emit('testar_notificacao', data);
   });
 });
 
-// Verifica tarefas próximas a cada minuto
+const salas = new Map();
+
+// Notificações
 setInterval(async () => {
   try {
-    console.log('Verificando tarefas próximas...');
     const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
     const tarefas = JSON.parse(data);
-    if (!tarefas.length) {
-      console.log('Nenhuma tarefa encontrada em tarefas.json');
-      return;
-    }
-    console.log(`Tarefas encontradas: ${tarefas.length}`);
     const agora = new Date();
     const trintaMinutosDepois = new Date(agora.getTime() + 30 * 60 * 1000);
-    console.log(`Janela de verificação: ${agora.toISOString()} até ${trintaMinutosDepois.toISOString()}`);
     tarefas.forEach(tarefa => {
-      try {
-        const prazoStr = tarefa.prazo.replace('T', ' ').slice(0, 16);
-        const prazo = new Date(prazoStr);
-        if (isNaN(prazo)) {
-          console.error(`Formato de prazo inválido para tarefa "${tarefa.titulo}": ${tarefa.prazo}`);
-          return;
-        }
-        console.log(`Tarefa "${tarefa.titulo}" - Prazo: ${prazo.toISOString()}`);
-        if (prazo >= agora && prazo <= trintaMinutosDepois) {
-          console.log(`Emitindo notificação para tarefa "${tarefa.titulo}" (Prazo: ${tarefa.prazo})`);
-          io.emit('notificacao', { mensagem: `Tarefa "${tarefa.titulo}" vence em 30 minutos!` });
-        }
-      } catch (err) {
-        console.error(`Erro ao processar prazo da tarefa "${tarefa.titulo}":`, err);
+      const prazo = new Date(tarefa.prazo);
+      if (prazo >= agora && prazo <= trintaMinutosDepois) {
+        io.emit('notificacao', { mensagem: `Tarefa "${tarefa.titulo}" vence em 30 minutos!` });
       }
     });
   } catch (err) {

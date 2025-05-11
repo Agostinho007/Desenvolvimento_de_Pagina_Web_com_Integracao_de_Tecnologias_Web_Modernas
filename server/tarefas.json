@@ -1,10 +1,10 @@
 [
   {
     "id": 1,
-    "titulo": "Kekas",
-    "descricao": "Fulana da Banda (Mula)",
+    "titulo": "Kekas2",
+    "descricao": "Com uma mula",
     "prioridade": "alta",
-    "prazo": "2025-05-01 20:05"
+    "prazo": "2025-05-11T13:02"
   },
   {
     "id": 2,
@@ -19,13 +19,6 @@
     "descricao": "hsjhj",
     "prioridade": "alta",
     "prazo": "2025-05-04 14:59"
-  },
-  {
-    "id": 4,
-    "titulo": "cgr",
-    "descricao": "cgr love",
-    "prioridade": "media",
-    "prazo": "2025-05-31 13:01"
   },
   {
     "id": 5,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow - Chat</title>
+  <title>TaskFlow - Chat Gerente</title>
   <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
@@ -27,32 +27,23 @@
   </nav>
   <div class="container mt-4">
     <div class="card p-4">
-      <h1 class="mb-4">Chat do TaskFlow</h1>
-      <div id="nomeContainer">
-        <form id="nomeForm">
+      <h1 class="mb-4">Chat do Gerente</h1>
+      <div id="pinContainer">
+        <form id="pinForm">
           <div class="mb-3">
-            <input type="text" id="nome" class="form-control" placeholder="Digite seu nome" required>
+            <input type="password" id="pin" class="form-control" placeholder="Digite o PIN do gerente" required>
           </div>
-          <div id="mensagemNome" class="text-danger"></div>
+          <div id="mensagemPin" class="text-danger"></div>
           <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
       </div>
-      <div id="chatContainer" style="display: none;">
-        <div id="chatAssistente">
-          <div id="mensagens" class="chat-messages"></div>
-          <div id="limiteMensagem" style="display: none;" class="text-danger"></div>
-          <button id="iniciarChatBidirecional" style="display: none;" class="btn btn-primary">Iniciar Chat Bidirecional</button>
-          <form id="chatForm">
-            <div class="mb-3">
-              <input type="text" id="mensagem" class="form-control" placeholder="Digite sua mensagem..." required>
-            </div>
-            <button type="submit" class="btn btn-primary">Enviar</button>
-          </form>
-        </div>
-        <div id="chatBidirecional" style="display: none;">
+      <div id="gerenteContainer" style="display: none;">
+        <h2>Usuários Finalizados</h2>
+        <ul id="usuariosFinalizados" class="list-group mb-3"></ul>
+        <div id="chatGerente" style="display: none;">
           <div id="statusChat" class="mb-3"></div>
           <div id="mensagensChat" class="chat-messages"></div>
-          <form id="chatBidirecionalForm">
+          <form id="chatGerenteForm">
             <div class="mb-3">
               <input type="text" id="mensagemChat" class="form-control" placeholder="Digite sua mensagem..." required>
             </div>
@@ -83,8 +74,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     const socket = io({ reconnection: false });
-    let contadorMensagens = parseInt(localStorage.getItem('contadorMensagens') || '0');
-    let nomeUsuario = null;
     const mensagensExibidas = new Set();
 
     // Função de debounce
@@ -100,32 +89,31 @@
       };
     }
 
-    document.getElementById('nomeForm').addEventListener('submit', (e) => {
+    document.getElementById('pinForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nome = document.getElementById('nome').value.trim();
-      const mensagemNome = document.getElementById('mensagemNome');
-      if (!nome) {
-        mensagemNome.textContent = 'Digite seu nome.';
-        return;
-      }
-      nomeUsuario = nome;
-      socket.emit('registrar_nome', nome);
-      document.getElementById('nomeContainer').style.display = 'none';
-      document.getElementById('chatContainer').style.display = 'block';
-      atualizarInterface();
-    });
+      const pin = document.getElementById('pin').value;
+      const mensagemPin = document.getElementById('mensagemPin');
 
-    function adicionarMensagem(mensagem, isUsuario = false) {
-      const mensagemId = `${isUsuario ? nomeUsuario : 'Assistente'}:${mensagem}:${Date.now()}`;
-      if (mensagensExibidas.has(mensagemId)) return;
-      mensagensExibidas.add(mensagemId);
-      const mensagens = document.getElementById('mensagens');
-      const div = document.createElement('div');
-      div.className = `chat-message ${isUsuario ? 'user' : 'other'}`;
-      div.textContent = mensagem;
-      mensagens.appendChild(div);
-      mensagens.scrollTop = mensagens.scrollHeight;
-    }
+      try {
+        const response = await fetch('/api/validar-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('pinContainer').style.display = 'none';
+          document.getElementById('gerenteContainer').style.display = 'block';
+          socket.emit('gerente_conectado');
+        } else {
+          mensagemPin.textContent = data.error || 'PIN inválido.';
+        }
+      } catch (err) {
+        mensagemPin.textContent = 'Erro ao validar PIN.';
+        console.error('Erro ao validar PIN:', err);
+      }
+    });
 
     const adicionarMensagemChatDebounced = debounce((nome, mensagem, isProprio, mensagemId) => {
       if (mensagensExibidas.has(mensagemId)) {
@@ -142,43 +130,31 @@
       console.log(`Mensagem chat adicionada: ${nome}: ${mensagem} (ID: ${mensagemId}, isProprio: ${isProprio})`);
     }, 100);
 
-    function atualizarInterface() {
-      const limiteMensagem = document.getElementById('limiteMensagem');
-      const iniciarChatBidirecional = document.getElementById('iniciarChatBidirecional');
-      if (contadorMensagens >= 5) {
-        limiteMensagem.textContent = 'Limite de 5 respostas atingido. Deseja conversar com outro usuário?';
-        limiteMensagem.style.display = 'block';
-        iniciarChatBidirecional.style.display = 'block';
-        document.getElementById('chatForm').style.display = 'none';
-      } else {
-        limiteMensagem.style.display = 'none';
-        iniciarChatBidirecional.style.display = 'none';
-        document.getElementById('chatForm').style.display = 'block';
-      }
-    }
-
-    document.getElementById('chatForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const mensagem = document.getElementById('mensagem').value.trim();
-      if (!mensagem) return;
-      adicionarMensagem(mensagem, true);
-      socket.emit('mensagem', { mensagem, contador: contadorMensagens, nome: nomeUsuario });
-      document.getElementById('mensagem').value = '';
+    socket.on('atualizar_usuarios', (usuarios) => {
+      const usuariosFinalizados = document.getElementById('usuariosFinalizados');
+      usuariosFinalizados.innerHTML = '';
+      usuarios.forEach(({ id, nome }) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `${nome} <button class="btn btn-primary btn-sm float-end" onclick="selecionarUsuario('${id}')">Selecionar</button>`;
+        usuariosFinalizados.appendChild(li);
+      });
     });
 
-    document.getElementById('iniciarChatBidirecional').addEventListener('click', () => {
-      document.getElementById('chatAssistente').style.display = 'none';
-      document.getElementById('chatBidirecional').style.display = 'block';
-      socket.emit('entrar_chat_bidirecional');
-    });
+    window.selecionarUsuario = (userId) => {
+      socket.emit('selecionar_usuario', userId);
+      document.getElementById('chatGerente').style.display = 'block';
+      document.getElementById('mensagensChat').innerHTML = '';
+      mensagensExibidas.clear();
+    };
 
-    document.getElementById('chatBidirecionalForm').addEventListener('submit', (e) => {
+    document.getElementById('chatGerenteForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const mensagem = document.getElementById('mensagemChat').value.trim();
       if (!mensagem) return;
       socket.emit('mensagem_chat', mensagem);
       const mensagemId = `${socket.id}:${Date.now()}`;
-      adicionarMensagemChatDebounced(nomeUsuario, mensagem, true, mensagemId);
+      adicionarMensagemChatDebounced('Gerente', mensagem, true, mensagemId);
       document.getElementById('mensagemChat').value = '';
     });
 
@@ -189,8 +165,9 @@
     document.getElementById('confirmarSair').addEventListener('click', () => {
       socket.emit('sair_chat');
       bootstrap.Modal.getInstance(document.getElementById('modalSair')).hide();
-      localStorage.setItem('contadorMensagens', '0');
-      window.location.href = '/cronograma.html';
+      document.getElementById('chatGerente').style.display = 'none';
+      document.getElementById('mensagensChat').innerHTML = '';
+      mensagensExibidas.clear();
     });
 
     socket.on('chat_status', (status) => {
@@ -200,25 +177,6 @@
 
     socket.on('mensagem_chat', (data) => {
       adicionarMensagemChatDebounced(data.nome, data.mensagem, data.id === socket.id, data.mensagemId);
-    });
-
-    socket.on('resposta', (resposta) => {
-      adicionarMensagem(resposta);
-      contadorMensagens++;
-      localStorage.setItem('contadorMensagens', contadorMensagens);
-      atualizarInterface();
-    });
-
-    socket.on('bloquear_chat_bidirecional', (bloquear) => {
-      const botaoChatBidirecional = document.getElementById('iniciarChatBidirecional');
-      botaoChatBidirecional.disabled = bloquear;
-      botaoChatBidirecional.style.display = bloquear ? 'none' : 'block';
-      if (bloquear) {
-        document.getElementById('statusChat').textContent = 'Você está em um chat com o gerente.';
-      } else {
-        atualizarInterface();
-      }
-      console.log(`Botão Iniciar Chat Bidirecional: ${bloquear ? 'desativado' : 'ativado'}`);
     });
   </script>
 </body>

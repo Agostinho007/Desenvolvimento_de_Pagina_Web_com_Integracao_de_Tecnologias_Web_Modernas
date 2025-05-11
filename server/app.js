@@ -9,7 +9,8 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  reconnection: false // Desativar reconexões automáticas
+  transports: ['websocket'], // Usar WebSocket puro no Render
+  cors: { origin: '*' } // Permitir conexões do Render
 });
 
 // Configurar timeouts para Render
@@ -219,8 +220,7 @@ io.on('connection', (socket) => {
       const mensagemId = uuidv4();
       if (mensagensEnviadas.has(mensagemId)) return;
       mensagensEnviadas.set(mensagemId, true);
-      socket.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
-      socket.emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId }); // Retransmitir para o remetente
+      io.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
       console.log(`Mensagem na sala ${salaId} de ${socket.nome}: ${mensagem} (ID: ${mensagemId})`);
     });
   });

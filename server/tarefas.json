@@ -1,37 +1,37 @@
 [
   {
     "id": 1,
-    "titulo": "Kekas2",
+    "titulo": "Kekas",
     "descricao": "Com uma mula",
     "prioridade": "alta",
-    "prazo": "2025-05-11T13:02"
+    "prazo": "2025-05-11T11:02:00.000Z"
   },
   {
     "id": 2,
     "titulo": "Beer Time",
     "descricao": "Na casa da berta",
     "prioridade": "alta",
-    "prazo": "2025-05-04 14:20"
-  },
-  {
-    "id": 3,
-    "titulo": "AJAX",
-    "descricao": "hsjhj",
-    "prioridade": "alta",
-    "prazo": "2025-05-04 14:59"
+    "prazo": "2025-05-04T14:20:00.000Z"
   },
   {
     "id": 5,
     "titulo": "Filme",
     "descricao": "Vou assistir um filme de anime de noite",
     "prioridade": "media",
-    "prazo": "2025-05-08 18:46"
+    "prazo": "2025-05-08T18:46:00.000Z"
   },
   {
     "id": 6,
     "titulo": "Ler",
     "prioridade": "alta",
-    "prazo": "2025-05-11T18:51",
+    "prazo": "2025-05-11T18:51:00.000Z",
     "descricao": "You, Bodies"
+  },
+  {
+    "id": 7,
+    "titulo": "Dormir de Tarde",
+    "prioridade": "media",
+    "prazo": "2025-05-11T17:03:00.000Z",
+    "descricao": "Na sexta"
   }
 ]

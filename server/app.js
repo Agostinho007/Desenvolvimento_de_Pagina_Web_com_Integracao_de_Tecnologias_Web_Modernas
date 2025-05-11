@@ -149,6 +149,29 @@ let socketGerente = null;
 const mensagensEnviadas = new Map();
 const salas = new Map();
 
+// Verificação de prazos e envio de notificações
+setInterval(async () => {
+  try {
+    const data = await fs.readFile(path.join(__dirname, 'tarefas.json'), 'utf8');
+    const tarefas = JSON.parse(data);
+    const now = new Date();
+    tarefas.forEach(tarefa => {
+      try {
+        const prazo = new Date(tarefa.prazo);
+        if (isNaN(prazo.getTime())) return; // Ignora prazos inválidos
+        const diffMinutes = (prazo - now) / (1000 * 60);
+        if (diffMinutes > 0 && diffMinutes <= 30) {
+          io.emit('notificacao', { mensagem: `Tarefa '${tarefa.titulo}' vence em ${Math.round(diffMinutes)} minutos!` });
+        }
+      } catch (err) {
+        console.error(`Erro ao processar prazo da tarefa ${tarefa.id}:`, err);
+      }
+    });
+  } catch (err) {
+    console.error('Erro ao verificar prazos:', err);
+  }
+}, 30000);
+
 io.on('connection', (socket) => {
   console.log(`Cliente conectado: ${socket.id}`);
 
@@ -161,7 +184,6 @@ io.on('connection', (socket) => {
     const { mensagem, contador, nome } = data;
     if (contador >= 4) {
       if (usuariosEmChat.has(socket.id)) {
-        // Usuário está em chat com gerente, redirecionar para mensagem_chat
         const salaId = usuariosEmChat.get(socket.id);
         const mensagemId = uuidv4();
         if (mensagensEnviadas.has(mensagemId)) return;
@@ -169,7 +191,6 @@ io.on('connection', (socket) => {
         io.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
         console.log(`Mensagem redirecionada para sala ${salaId} de ${socket.nome}: ${mensagem} (ID: ${mensagemId})`);
       } else {
-        // Limite atingido, notificar para aguardar gerente
         socket.emit('resposta', 'Você atingiu o limite de 5 mensagens. Aguarde o gerente iniciar o chat.');
         if (!usuariosFinalizados.has(socket.id)) {
           usuariosFinalizados.set(socket.id, { nome, socket });
@@ -187,7 +208,7 @@ io.on('connection', (socket) => {
     }
     const resposta = await responderMensagem(mensagem, contador, nome);
     socket.emit('resposta', resposta);
-    if (contador === 3) { // Antes da 5ª mensagem, preparar para o limite
+    if (contador === 3) {
       usuariosFinalizados.set(socket.id, { nome, socket });
       if (socketGerente) {
         socketGerente.emit('atualizar_usuarios', Array.from(usuariosFinalizados.entries())

@@ -12,6 +12,10 @@ const io = socketIo(server, {
   reconnection: false // Desativar reconexões automáticas
 });
 
+// Configurar timeouts para Render
+server.keepAliveTimeout = 120000; // 120 segundos
+server.headersTimeout = 120000; // 120 segundos
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -216,6 +220,7 @@ io.on('connection', (socket) => {
       if (mensagensEnviadas.has(mensagemId)) return;
       mensagensEnviadas.set(mensagemId, true);
       socket.to(salaId).emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId });
+      socket.emit('mensagem_chat', { id: socket.id, nome: socket.nome || 'Anônimo', mensagem, mensagemId }); // Retransmitir para o remetente
       console.log(`Mensagem na sala ${salaId} de ${socket.nome}: ${mensagem} (ID: ${mensagemId})`);
     });
   });
@@ -267,8 +272,7 @@ io.on('connection', (socket) => {
         return;
       }
       mensagensEnviadas.set(mensagemId, true);
-      socket.emit('mensagem_chat', { id: userId, nome: usuario.nome, mensagem, mensagemId });
-      usuario.socket.emit('mensagem_chat', { id: userId, nome: usuario.nome, mensagem, mensagemId });
+      io.to(salaId).emit('mensagem_chat', { id: userId, nome: usuario.nome, mensagem, mensagemId });
       console.log(`Mensagem na sala ${salaId} de ${usuario.nome}: ${mensagem} (ID: ${mensagemId})`);
     });
 

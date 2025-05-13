@@ -8,7 +8,7 @@ const router = express.Router();
 const dbPath = path.join(__dirname, 'db.json');
 
 // Carregar ou inicializar banco de dados
-let db = { users: [], tasks: [], disciplines: [], notifications: [], chats: [] };
+let db = { users: [], tasks: [], disciplines: [], notifications: [], chats: [], botInteractions: {} };
 try {
     if (fs.existsSync(dbPath)) {
         const rawData = fs.readFileSync(dbPath, 'utf8');
@@ -19,6 +19,7 @@ try {
         if (!db.disciplines) db.disciplines = [];
         if (!db.notifications) db.notifications = [];
         if (!db.chats) db.chats = [];
+        if (!db.botInteractions) db.botInteractions = {};
     } else {
         db.users = [
             { id: '1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrador' },
@@ -28,6 +29,7 @@ try {
         db.disciplines = ['Matemática', 'Programação Web', 'Inteligência Artificial', 'História', 'Física'];
         db.notifications = [];
         db.chats = [];
+        db.botInteractions = {};
         fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
     }
 } catch (error) {
@@ -115,6 +117,28 @@ router.post('/admin/register', authenticateToken, authenticateAdmin, (req, res) 
     res.json({ message: 'Administrador criado com sucesso' });
 });
 
+// Rota: Listar administradores
+router.get('/admin/admins', authenticateToken, authenticateAdmin, (req, res) => {
+    const admins = db.users.filter(u => u.role === 'admin').map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username
+    }));
+    res.json(admins);
+});
+
+// Rota: Excluir administrador
+router.delete('/admin/admins/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    const adminId = req.params.id;
+    const adminIndex = db.users.findIndex(u => u.id === adminId && u.role === 'admin');
+    if (adminIndex === -1) return res.status(404).json({ message: 'Administrador não encontrado' });
+    const adminCount = db.users.filter(u => u.role === 'admin').length;
+    if (adminCount <= 1) return res.status(400).json({ message: 'Não é possível excluir o último administrador' });
+    db.users.splice(adminIndex, 1);
+    saveDb();
+    res.json({ message: 'Administrador excluído com sucesso' });
+});
+
 // Rota: Login
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -134,9 +158,6 @@ router.post('/tasks', authenticateToken, (req, res) => {
     if (!title || !type || !description || !deadline || !subject || !priority || !estimatedTime) {
         return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
     }
-    if (!db.disciplines.includes(subject) && subject !== 'Outra') {
-        db.disciplines.push(subject);
-    }
     const task = {
         id: String(db.tasks.length + 1),
         title,
@@ -144,112 +165,15 @@ router.post('/tasks', authenticateToken, (req, res) => {
         description,
         deadline: formatDate(deadline),
         subject,
-        assignedTo: [req.user.username],
-        groupMembers: [req.user.username],
         priority,
         estimatedTime,
-        status: 'Pendente'
+        status: 'Pendente',
+        userId: db.users.find(u => u.username === req.user.username).id,
+        createdAt: new Date().toISOString()
     };
     db.tasks.push(task);
-    const notification = {
-        id: String(db.notifications.length + 1),
-        message: `Nova tarefa criada: ${title} (${subject})`,
-        timestamp: new Date().toISOString(),
-        user: req.user.username
-    };
-    db.notifications.push(notification);
     saveDb();
-    const io = req.app.get('io');
-    io.emit('newTask', { task, notification });
-    res.json(task);
-});
-
-// Rota: Visão geral do aluno
-router.get('/student-overview', authenticateToken, (req, res) => {
-    const userTasks = db.tasks.filter(t => t.assignedTo.includes(req.user.username)) || [];
-    const pendingTasks = userTasks.filter(t => t.status === 'Pendente').length;
-    const completedTasks = userTasks.filter(t => t.status === 'Concluída').length;
-    const overdueTasks = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        const [day, month, year] = t.deadline.split('/');
-        return new Date(`${year}-${month}-${day}`) < new Date() && t.status !== 'Concluída';
-    }).length;
-    const upcomingTasks = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        const [day, month, year] = t.deadline.split('/');
-        const deadline = new Date(`${year}-${month}-${day}`);
-        const now = new Date();
-        return deadline > now && deadline < new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    }).length;
-    res.json({ pendingTasks, completedTasks, overdueTasks, upcomingTasks });
-});
-
-// Rota: Listar tarefas do aluno
-router.get('/tasks', authenticateToken, (req, res) => {
-    const filter = req.query.filter || 'all';
-    let userTasks = db.tasks.filter(t => t.assignedTo.includes(req.user.username)) || [];
-    if (filter !== 'all') {
-        userTasks = userTasks.filter(t => t.status === filter);
-    }
-    res.json(userTasks);
-});
-
-// Rota: Atualizar tarefa (aluno)
-router.patch('/tasks/:id', authenticateToken, (req, res) => {
-    const task = db.tasks.find(t => t.id === req.params.id && t.assignedTo.includes(req.user.username));
-    if (!task) return res.status(404).json({ message: 'Tarefa não encontrada ou não autorizada' });
-    Object.assign(task, req.body);
-    const notification = {
-        id: String(db.notifications.length + 1),
-        message: `Tarefa atualizada: ${task.title} (${task.subject}) - Status: ${req.body.status}`,
-        timestamp: new Date().toISOString(),
-        user: req.user.username
-    };
-    db.notifications.push(notification);
-    saveDb();
-    const io = req.app.get('io');
-    io.emit('taskUpdated', { task, notification });
-    res.json({ message: 'Tarefa atualizada' });
-});
-
-// Rota: Relatórios do aluno
-router.get('/reports', authenticateToken, (req, res) => {
-    const userTasks = db.tasks.filter(t => t.assignedTo.includes(req.user.username)) || [];
-    const bySubject = {};
-    const byType = {
-        'Trabalho individual': 0,
-        'Trabalho em grupo': 0,
-        'Revisão': 0,
-        'Apresentação': 0
-    };
-    userTasks.forEach(task => {
-        if (!bySubject[task.subject]) {
-            bySubject[task.subject] = { Pendente: 0, 'Em andamento': 0, Concluída: 0 };
-        }
-        bySubject[task.subject][task.status] = (bySubject[task.subject][task.status] || 0) + 1;
-        if (byType[task.type] !== undefined) {
-            byType[task.type]++;
-        }
-    });
-    res.json({ bySubject, byType });
-});
-
-// Rota: Visão geral do administrador
-router.get('/admin-overview', authenticateToken, authenticateAdmin, (req, res) => {
-    const totalTasks = db.tasks.length || 0;
-    const pendingTasks = db.tasks.filter(t => t.status === 'Pendente').length || 0;
-    const activeStudents = db.users.filter(u => u.role === 'student').length || 0;
-    const overdueTasks = db.tasks.filter(t => {
-        if (!t.deadline) return false;
-        const [day, month, year] = t.deadline.split('/');
-        return new Date(`${year}-${month}-${day}`) < new Date() && t.status !== 'Concluída';
-    }).length || 0;
-    res.json({ totalTasks, pendingTasks, activeStudents, overdueTasks });
-});
-
-// Rota: Listar todas as tarefas (admin)
-router.get('/admin/tasks', authenticateToken, authenticateAdmin, (req, res) => {
-    res.json(db.tasks || []);
+    res.json({ message: 'Tarefa criada com sucesso', task });
 });
 
 // Rota: Criar tarefa (admin)
@@ -258,9 +182,6 @@ router.post('/admin/tasks', authenticateToken, authenticateAdmin, (req, res) => 
     if (!title || !type || !description || !deadline || !subject || !priority || !estimatedTime) {
         return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
     }
-    if (!db.disciplines.includes(subject) && subject !== 'Outra') {
-        db.disciplines.push(subject);
-    }
     const task = {
         id: String(db.tasks.length + 1),
         title,
@@ -268,127 +189,230 @@ router.post('/admin/tasks', authenticateToken, authenticateAdmin, (req, res) => 
         description,
         deadline: formatDate(deadline),
         subject,
-        assignedTo: [req.user.username],
-        groupMembers: [req.user.username],
         priority,
         estimatedTime,
-        status: 'Pendente'
+        status: 'Pendente',
+        userId: null,
+        createdAt: new Date().toISOString()
     };
     db.tasks.push(task);
-    const notification = {
-        id: String(db.notifications.length + 1),
-        message: `Nova tarefa criada por admin: ${title} (${subject})`,
-        timestamp: new Date().toISOString(),
-        user: req.user.username
-    };
-    db.notifications.push(notification);
     saveDb();
-    const io = req.app.get('io');
-    io.emit('newTask', { task, notification });
-    res.json(task);
+    res.json({ message: 'Tarefa criada com sucesso', task });
 });
 
-// Rota: Editar tarefa (admin)
-router.patch('/admin/tasks/:id', authenticateToken, authenticateAdmin, (req, res) => {
-    const task = db.tasks.find(t => t.id === req.params.id);
-    if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
-    const { title, type, description, deadline, subject, priority, estimatedTime, status } = req.body;
-    if (!title || !type || !description || !deadline || !subject || !priority || !estimatedTime || !status) {
-        return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
-    }
-    if (!db.disciplines.includes(subject) && subject !== 'Outra') {
-        db.disciplines.push(subject);
-    }
-    Object.assign(task, {
-        title,
-        type,
-        description,
-        deadline: formatDate(deadline),
-        subject,
-        priority,
-        estimatedTime,
-        status
+// Rota: Listar tarefas (aluno)
+router.get('/tasks', authenticateToken, (req, res) => {
+    if (req.user.role !== 'student') return res.status(403).json({ message: 'Acesso negado' });
+    const filter = req.query.filter || 'all';
+    const userId = db.users.find(u => u.username === req.user.username).id;
+    let tasks = db.tasks.filter(t => t.userId === userId);
+    if (filter !== 'all') tasks = tasks.filter(t => t.status === filter);
+    res.json(tasks);
+});
+
+// Rota: Listar tarefas priorizadas (aluno)
+router.get('/tasks/prioritized', authenticateToken, (req, res) => {
+    if (req.user.role !== 'student') return res.status(403).json({ message: 'Acesso negado' });
+    const userId = db.users.find(u => u.username === req.user.username).id;
+    const tasks = db.tasks.filter(t => t.userId === userId && t.status !== 'Concluída');
+    tasks.sort((a, b) => {
+        const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+        const priorityA = priorityOrder[a.priority] || 3;
+        const priorityB = priorityOrder[b.priority] || 3;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        const [dayA, monthA, yearA] = a.deadline.split('/');
+        const [dayB, monthB, yearB] = b.deadline.split('/');
+        const dateA = new Date(`${yearA}-${monthA}-${dayA}`);
+        const dateB = new Date(`${yearB}-${monthB}-${dayB}`);
+        return dateA - dateB;
     });
-    const notification = {
-        id: String(db.notifications.length + 1),
-        message: `Tarefa editada por admin: ${title} (${subject}) - Status: ${status}`,
-        timestamp: new Date().toISOString(),
-        user: req.user.username
-    };
-    db.notifications.push(notification);
+    res.json(tasks);
+});
+
+// Rota: Listar tarefas (admin)
+router.get('/admin/tasks', authenticateToken, authenticateAdmin, (req, res) => {
+    res.json(db.tasks);
+});
+
+// Rota: Atualizar tarefa (aluno)
+router.patch('/tasks/:id', authenticateToken, (req, res) => {
+    if (req.user.role !== 'student') return res.status(403).json({ message: 'Acesso negado' });
+    const taskId = req.params.id;
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ message: 'Status é obrigatório' });
+    const task = db.tasks.find(t => t.id === taskId && t.userId === db.users.find(u => u.username === req.user.username).id);
+    if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+    task.status = status;
     saveDb();
-    const io = req.app.get('io');
-    io.emit('taskUpdated', { task, notification });
-    res.json({ message: 'Tarefa atualizada' });
+    res.json({ message: 'Tarefa atualizada com sucesso', task });
+});
+
+// Rota: Atualizar tarefa (admin)
+router.patch('/admin/tasks/:id', authenticateToken, authenticateAdmin, (req, res) => {
+    const taskId = req.params.id;
+    const { title, type, description, deadline, subject, priority, estimatedTime, status } = req.body;
+    const task = db.tasks.find(t => t.id === taskId);
+    if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+    task.title = title || task.title;
+    task.type = type || task.type;
+    task.description = description || task.description;
+    task.deadline = deadline ? formatDate(deadline) : task.deadline;
+    task.subject = subject || task.subject;
+    task.priority = priority || task.priority;
+    task.estimatedTime = estimatedTime || task.estimatedTime;
+    task.status = status || task.status;
+    saveDb();
+    res.json({ message: 'Tarefa atualizada com sucesso', task });
 });
 
 // Rota: Excluir tarefa (admin)
 router.delete('/admin/tasks/:id', authenticateToken, authenticateAdmin, (req, res) => {
-    const initialLength = db.tasks.length;
-    db.tasks = db.tasks.filter(t => t.id !== req.params.id);
-    if (db.tasks.length === initialLength) {
-        return res.status(404).json({ message: 'Tarefa não encontrada' });
-    }
+    const taskId = req.params.id;
+    const taskIndex = db.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return res.status(404).json({ message: 'Tarefa não encontrada' });
+    db.tasks.splice(taskIndex, 1);
     saveDb();
-    res.json({ message: 'Tarefa excluída' });
+    res.json({ message: 'Tarefa excluída com sucesso' });
 });
 
-// Rota: Relatório de desempenho dos alunos (admin)
+// Rota: Visão geral (aluno)
+router.get('/student-overview', authenticateToken, (req, res) => {
+    if (req.user.role !== 'student') return res.status(403).json({ message: 'Acesso negado' });
+    const userId = db.users.find(u => u.username === req.user.username).id;
+    const tasks = db.tasks.filter(t => t.userId === userId);
+    const today = new Date();
+    const overview = {
+        pendingTasks: tasks.filter(t => t.status === 'Pendente').length,
+        completedTasks: tasks.filter(t => t.status === 'Concluída').length,
+        overdueTasks: tasks.filter(t => {
+            const [day, month, year] = t.deadline.split('/');
+            const deadline = new Date(`${year}-${month}-${day}`);
+            return deadline < today && t.status !== 'Concluída';
+        }).length,
+        upcomingTasks: tasks.filter(t => {
+            const [day, month, year] = t.deadline.split('/');
+            const deadline = new Date(`${year}-${month}-${day}`);
+            return deadline >= today && t.status !== 'Concluída';
+        }).length
+    };
+    res.json(overview);
+});
+
+// Rota: Visão geral (admin)
+router.get('/admin-overview', authenticateToken, authenticateAdmin, (req, res) => {
+    const today = new Date();
+    const overview = {
+        totalTasks: db.tasks.length,
+        pendingTasks: db.tasks.filter(t => t.status === 'Pendente').length,
+        overdueTasks: db.tasks.filter(t => {
+            const [day, month, year] = t.deadline.split('/');
+            const deadline = new Date(`${year}-${month}-${day}`);
+            return deadline < today && t.status !== 'Concluída';
+        }).length,
+        activeStudents: db.users.filter(u => u.role === 'student').length
+    };
+    res.json(overview);
+});
+
+// Rota: Relatórios (aluno)
+router.get('/reports', authenticateToken, (req, res) => {
+    if (req.user.role !== 'student') return res.status(403).json({ message: 'Acesso negado' });
+    const userId = db.users.find(u => u.username === req.user.username).id;
+    const tasks = db.tasks.filter(t => t.userId === userId);
+    const bySubject = {};
+    const byType = {};
+    tasks.forEach(t => {
+        bySubject[t.subject] = bySubject[t.subject] || {};
+        bySubject[t.subject][t.status] = (bySubject[t.subject][t.status] || 0) + 1;
+        byType[t.type] = (byType[t.type] || 0) + 1;
+    });
+    res.json({ bySubject, byType });
+});
+
+// Rota: Relatórios de desempenho dos alunos (admin)
 router.get('/admin/reports/students', authenticateToken, authenticateAdmin, (req, res) => {
-    const students = db.users
-        .filter(u => u.role === 'student')
-        .map(u => ({
-            name: u.name,
-            completedTasks: db.tasks.filter(t => t.assignedTo.includes(u.username) && t.status === 'Concluída').length || 0,
-            pendingTasks: db.tasks.filter(t => t.assignedTo.includes(u.username) && t.status === 'Pendente').length || 0
-        }));
+    const students = db.users.filter(u => u.role === 'student').map(u => ({
+        name: u.name,
+        completedTasks: db.tasks.filter(t => t.userId === u.id && t.status === 'Concluída').length,
+        pendingTasks: db.tasks.filter(t => t.userId === u.id && t.status !== 'Concluída').length
+    }));
     res.json(students);
 });
 
-// Rota: Relatório de tipos de tarefas (admin)
+// Rota: Relatórios por tipo de tarefa (admin)
 router.get('/admin/reports/task-types', authenticateToken, authenticateAdmin, (req, res) => {
-    const byType = {
-        'Trabalho individual': 0,
-        'Trabalho em grupo': 0,
-        'Revisão': 0,
-        'Apresentação': 0
-    };
-    db.tasks.forEach(task => {
-        if (byType[task.type] !== undefined) {
-            byType[task.type]++;
-        }
+    const byType = {};
+    db.tasks.forEach(t => {
+        byType[t.type] = (byType[t.type] || 0) + 1;
     });
     res.json({ byType });
 });
 
-// Rota: Relatório de tarefas por disciplina (admin)
+// Rota: Relatórios por disciplina (admin)
 router.get('/admin/reports/disciplines', authenticateToken, authenticateAdmin, (req, res) => {
     const byDiscipline = {};
-    db.tasks.forEach(task => {
-        if (!byDiscipline[task.subject]) {
-            byDiscipline[task.subject] = { Pendente: 0, 'Em andamento': 0, Concluída: 0 };
-        }
-        byDiscipline[task.subject][task.status] = (byDiscipline[task.subject][task.status] || 0) + 1;
+    db.tasks.forEach(t => {
+        byDiscipline[t.subject] = byDiscipline[t.subject] || {};
+        byDiscipline[t.subject][t.status] = (byDiscipline[t.subject][t.status] || 0) + 1;
     });
     res.json(byDiscipline);
 });
 
-// Rota: Listar notificações
-router.get('/notifications', authenticateToken, (req, res) => {
-    const userNotifications = db.notifications.filter(n => n.user === req.user.username || !n.user) || [];
-    res.json(userNotifications);
+// Rota: Relatórios mensais de tarefas (admin)
+router.get('/admin/reports/monthly', authenticateToken, authenticateAdmin, (req, res) => {
+    const months = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthly = {};
+    months.forEach((month, index) => {
+        monthly[month] = 0;
+    });
+    db.tasks.forEach(t => {
+        const [day, month, year] = t.deadline.split('/');
+        if (year === '2025') {
+            const monthIndex = parseInt(month, 10) - 1;
+            const monthName = months[monthIndex];
+            monthly[monthName]++;
+        }
+    });
+    res.json(monthly);
 });
 
-// Rota: Listar mensagens de chat
+// Rota: Notificações
+router.get('/notifications', authenticateToken, (req, res) => {
+    const notifications = db.notifications.filter(n => n.userId === db.users.find(u => u.username === req.user.username)?.id || n.userId === null);
+    res.json(notifications);
+});
+
+// Rota: Chats
 router.get('/chats', authenticateToken, (req, res) => {
     const username = req.query.username;
-    let userChats = [];
-    if (req.user.role === 'admin' && username) {
-        userChats = db.chats.filter(c => c.from === username || c.to === username);
+    let chats = db.chats;
+    if (username) {
+        chats = chats.filter(c => c.from === username || c.to === username);
+    } else if (req.user.role === 'admin') {
+        chats = chats.filter(c => c.from !== 'Bot' && c.to !== 'Bot');
     } else {
-        userChats = db.chats.filter(c => c.from === req.user.username || c.to === req.user.username);
+        chats = chats.filter(c => c.from === req.user.username || c.to === req.user.username);
     }
-    res.json(userChats);
+    res.json(chats);
+});
+
+// Rota: Enviar mensagem no chat
+router.post('/chats', authenticateToken, (req, res) => {
+    const { message, to, timestamp } = req.body;
+    if (!message || !to || !timestamp) return res.status(400).json({ message: 'Mensagem, destinatário e timestamp são obrigatórios' });
+    const chat = {
+        id: String(db.chats.length + 1),
+        from: req.user.username,
+        to,
+        message,
+        timestamp
+    };
+    db.chats.push(chat);
+    saveDb();
+    res.json({ message: 'Mensagem enviada com sucesso', chat });
 });
 
 module.exports = router;

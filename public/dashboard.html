@@ -3,628 +3,801 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Aluno - Sistema de Tarefas Acadêmicas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Tarefas Acadêmicas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilo.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Tarefas Acadêmicas</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#overview">Visão Geral</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#tasks">Tarefas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#reports">Relatórios</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#support">Suporte</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#notifications">Notificações</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="logout()">Sair</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('overview')">Visão Geral</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('tasks')">Tarefas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('prioritized')">Tarefas Priorizadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('reports')">Relatórios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('support')">Suporte</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('notifications')">Notificações</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Sair</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <h2 class="welcome-message">Bem-vindo, <span id="userName"></span></h2>
+    <div class="container">
+        <h1 class="welcome-message">Bem-vindo, <span id="userName"></span></h1>
 
-        <h2 id="overview">Visão Geral</h2>
-        <div id="overviewLoading" class="loading">Carregando...</div>
-        <div id="overviewError" class="alert alert-danger d-none"></div>
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
-                    <div class="card-body">
-                        <h5 class="card-title">Tarefas Pendentes</h5>
-                        <p class="card-text" id="pendingTasks">0</p>
+        <div id="overview" class="section">
+            <h2>Visão Geral</h2>
+            <div id="overviewContent" class="loading">Carregando...</div>
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tarefas Pendentes</h5>
+                            <p class="card-text" id="pendingTasks">0</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body">
-                        <h5 class="card-title">Tarefas Concluídas</h5>
-                        <p class="card-text" id="completedTasks">0</p>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tarefas Concluídas</h5>
+                            <p class="card-text" id="completedTasks">0</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body">
-                        <h5 class="card-title">Tarefas Atrasadas</h5>
-                        <p class="card-text" id="overdueTasks">0</p>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tarefas Atrasadas</h5>
+                            <p class="card-text" id="overdueTasks">0</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-info">
-                    <div class="card-body">
-                        <h5 class="card-title">Tarefas Próximas</h5>
-                        <p class="card-text" id="upcomingTasks">0</p>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Tarefas Próximas</h5>
+                            <p class="card-text" id="upcomingTasks">0</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <h2 id="tasks">Tarefas</h2>
-        <div id="tasksLoading" class="loading">Carregando...</div>
-        <div id="tasksError" class="alert alert-danger d-none"></div>
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Adicionar Tarefa</h5>
-                <form id="taskForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="title" class="form-label">Título</label>
-                            <input type="text" class="form-control" id="title" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="type" class="form-label">Tipo</label>
-                            <select class="form-select" id="type" required>
-                                <option value="Trabalho individual">Trabalho individual</option>
-                                <option value="Trabalho em grupo">Trabalho em grupo</option>
-                                <option value="Revisão">Revisão</option>
-                                <option value="Apresentação">Apresentação</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Descrição</label>
-                        <textarea class="form-control" id="description" rows="3" required></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="deadline" class="form-label">Data de Entrega</label>
-                            <input type="date" class="form-control" id="deadline" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="subject" class="form-label">Disciplina</label>
-                            <select class="form-select" id="subject" required>
-                                <option value="Matemática">Matemática</option>
-                                <option value="Programação Web">Programação Web</option>
-                                <option value="Inteligência Artificial">Inteligência Artificial</option>
-                                <option value="História">História</option>
-                                <option value="Física">Física</option>
-                                <option value="Outra">Outra</option>
-                            </select>
-                            <input type="text" class="form-control mt-2" id="customSubject" placeholder="Digite a disciplina" style="display: none;">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="priority" class="form-label">Prioridade</label>
-                            <select class="form-select" id="priority" required>
-                                <option value="Alta">Alta</option>
-                                <option value="Média">Média</option>
-                                <option value="Baixa">Baixa</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="estimatedTime" class="form-label">Tempo Estimado</label>
-                            <input type="text" class="form-control" id="estimatedTime" placeholder="Ex: 5 horas" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Adicionar Tarefa</button>
-                </form>
-                <div id="formAlert" class="mt-3"></div>
+        <div id="tasks" class="section d-none">
+            <h2>Tarefas</h2>
+            <div id="tasksContent" class="loading">Carregando...</div>
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#taskModal">Adicionar Tarefa</button>
+            <div class="mb-3">
+                <label for="statusFilter" class="form-label">Filtrar por Status</label>
+                <select id="statusFilter" class="form-select" onchange="loadTasks()">
+                    <option value="all">Todas</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Concluída">Concluída</option>
+                </select>
             </div>
-        </div>
-
-        <div class="mb-3">
-            <label for="filter" class="form-label">Filtrar por Status</label>
-            <select class="form-select" id="filter">
-                <option value="all">Todas</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Em andamento">Em andamento</option>
-                <option value="Concluída">Concluída</option>
-            </select>
-        </div>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Disciplina</th>
-                    <th>Data</th>
-                    <th>Prioridade</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="taskList"></tbody>
-        </table>
-
-        <h2 id="reports">Relatórios</h2>
-        <div id="reportsLoading" class="loading">Carregando...</div>
-        <div id="reportsError" class="alert alert-danger d-none"></div>
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Tarefas por Disciplina</h5>
-                        <canvas id="subjectChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Tipos de Tarefa</h5>
-                        <canvas id="typeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h2 id="notifications">Notificações</h2>
-        <div id="notificationsLoading" class="loading">Carregando...</div>
-        <div id="notificationsError" class="alert alert-danger d-none"></div>
-        <button class="btn btn-secondary mb-3" onclick="loadNotifications()">Recarregar Notificações</button>
-        <div id="notificationList" class="list-group mb-4"></div>
-
-        <h2 id="support">Suporte</h2>
-        <div id="supportLoading" class="loading">Carregando...</div>
-        <div id="supportError" class="alert alert-danger d-none"></div>
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Chat de Suporte</h5>
-                <div id="chatMessages" class="border p-3 mb-3" style="height: 300px; overflow-y: auto;"></div>
-                <form id="chatForm">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="chatInput" placeholder="Digite sua mensagem" required>
-                        <button type="submit" class="btn btn-primary">Enviar</button>
-                    </div>
-                </form>
-                <div id="chatAlert" class="mt-3"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="editTaskModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar Tarefa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editTaskForm">
-                        <input type="hidden" id="editTaskId">
-                        <div class="mb-3">
-                            <label for="editStatus" class="form-label">Status</label>
-                            <select class="form-select" id="editStatus" required>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em andamento">Em andamento</option>
-                                <option value="Concluída">Concluída</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    </form>
-                    <div id="editFormAlert" class="mt-3"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let subjectChartInstance = null;
-        let typeChartInstance = null;
-        let botInteractionCount = 0;
-        const maxBotInteractions = 5;
-        let isAdminChat = false;
-        const socket = io('/', { transports: ['websocket'] });
-
-        // Verificar autenticação
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = 'index.html';
-        }
-
-        // Autenticar Socket.IO
-        socket.emit('authenticate', token);
-
-        // Exibir nome do usuário
-        const userName = localStorage.getItem('userName') || 'Aluno';
-        document.getElementById('userName').textContent = userName;
-
-        // Função para mostrar/esconder loading e erros
-        function toggleLoading(section, show) {
-            document.getElementById(`${section}Loading`).classList.toggle('d-none', !show);
-            document.getElementById(`${section}Error`).classList.add('d-none');
-        }
-
-        function showError(section, message) {
-            document.getElementById(`${section}Loading`).classList.add('d-none');
-            const errorEl = document.getElementById(`${section}Error`);
-            errorEl.textContent = message;
-            errorEl.classList.remove('d-none');
-        }
-
-        // Alternar campo de disciplina personalizada
-        document.getElementById('subject').addEventListener('change', (e) => {
-            const customSubject = document.getElementById('customSubject');
-            customSubject.style.display = e.target.value === 'Outra' ? 'block' : 'none';
-            customSubject.required = e.target.value === 'Outra';
-        });
-
-        async function loadOverview() {
-            toggleLoading('overview', true);
-            try {
-                const response = await fetch('/api/student-overview', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                const data = await response.json();
-                document.getElementById('pendingTasks').textContent = data.pendingTasks || 0;
-                document.getElementById('completedTasks').textContent = data.completedTasks || 0;
-                document.getElementById('overdueTasks').textContent = data.overdueTasks || 0;
-                document.getElementById('upcomingTasks').textContent = data.upcomingTasks || 0;
-                toggleLoading('overview', false);
-            } catch (error) {
-                showError('overview', `Erro ao carregar visão geral: ${error.message}`);
-            }
-        }
-
-        async function loadTasks() {
-            toggleLoading('tasks', true);
-            const filter = document.getElementById('filter').value;
-            try {
-                const response = await fetch(`/api/tasks?filter=${filter}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                const tasks = await response.json();
-                const taskList = document.getElementById('taskList');
-                taskList.innerHTML = tasks.length ? '' : '<tr><td colspan="6">Nenhuma tarefa encontrada.</td></tr>';
-                tasks.forEach(task => {
-                    taskList.innerHTML += `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
                         <tr>
+                            <th>Título</th>
+                            <th>Disciplina</th>
+                            <th>Data</th>
+                            <th>Prioridade</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="prioritized" class="section d-none">
+            <h2>Tarefas Priorizadas</h2>
+            <div id="prioritizedContent" class="loading">Carregando...</div>
+            <div class="mb-3">
+                <label for="priorityFilter" class="form-label">Filtrar Tarefas</label>
+                <select id="priorityFilter" class="form-select" onchange="loadPrioritizedTasks()">
+                    <option value="default">Padrão (Prioridade Alta > Baixa, Data Crescente)</option>
+                    <option value="dateAsc">Data de Entrega (Crescente)</option>
+                    <option value="dateDesc">Data de Entrega (Decrescente)</option>
+                    <option value="priorityAsc">Prioridade (Alta > Baixa)</option>
+                    <option value="priorityDesc">Prioridade (Baixa > Alta)</option>
+                </select>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Disciplina</th>
+                            <th>Data de Entrega</th>
+                            <th>Prioridade</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prioritizedTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="reports" class="section d-none">
+            <h2>Relatórios</h2>
+            <div id="reportsContent" class="loading">Carregando...</div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Tarefas por Disciplina</h5>
+                            <canvas id="tasksBySubject"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Tipos de Tarefa</h5>
+                            <canvas id="tasksByType"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifications" class="section d-none">
+            <h2>Notificações</h2>
+            <div id="notificationsContent" class="loading">Carregando...</div>
+            <button class="btn btn-primary mt-3" onclick="loadNotifications()">Recarregar Notificações</button>
+        </div>
+
+        <div id="support" class="section d-none">
+            <h2>Suporte</h2>
+            <div id="supportContent" class="loading">Carregando...</div>
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Chat de Suporte</h5>
+                    <div class="mb-3">
+                        <label for="chatRecipient" class="form-label">Enviar para</label>
+                        <select id="chatRecipient" class="form-select">
+                            <option value="Bot">Bot</option>
+                            <option value="admin" disabled>Administrador</option>
+                        </select>
+                    </div>
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <form id="chatForm" class="chat-form mt-3">
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="form-control" placeholder="Digite sua mensagem..." required>
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="taskModalLabel">Adicionar Tarefa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="taskForm">
+                            <div class="mb-3">
+                                <label for="taskTitle" class="form-label">Título</label>
+                                <input type="text" class="form-control" id="taskTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskType" class="form-label">Tipo</label>
+                                <select class="form-select" id="taskType" required>
+                                    <option value="Trabalho individual">Trabalho individual</option>
+                                    <option value="Trabalho em grupo">Trabalho em grupo</option>
+                                    <option value="Revisão">Revisão</option>
+                                    <option value="Apresentação">Apresentação</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskDescription" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="taskDescription" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskDeadline" class="form-label">Data de Entrega</label>
+                                <input type="date" class="form-control" id="taskDeadline" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskSubject" class="form-label">Disciplina</label>
+                                <input type="text" class="form-control" id="taskSubject" list="subjectList" required>
+                                <datalist id="subjectList">
+                                    <option value="Matemática">
+                                    <option value="Programação Web">
+                                    <option value="Inteligência Artificial">
+                                    <option value="História">
+                                    <option value="Física">
+                                </datalist>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskPriority" class="form-label">Prioridade</label>
+                                <select class="form-select" id="taskPriority" required>
+                                    <option value="Alta">Alta</option>
+                                    <option value="Média">Média</option>
+                                    <option value="Baixa">Baixa</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskEstimatedTime" class="form-label">Tempo Estimado</label>
+                                <input type="text" class="form-control" id="taskEstimatedTime" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Adicionar Tarefa</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="statusModalLabel">Confirmar Alteração de Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Deseja alterar o status da tarefa "<span id="statusTaskTitle"></span>" para "<span id="statusNewStatus"></span>"?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="confirmStatusChange">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="viewTaskModal" tabindex="-1" aria-labelledby="viewTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="viewTaskModalLabel">Detalhes da Tarefa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="viewTaskDetails"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            Chart.register(ChartDataLabels);
+            const token = localStorage.getItem('token');
+            if (!token) window.location.href = 'index.html';
+            document.getElementById('userName').textContent = localStorage.getItem('userName') || 'Usuário';
+            const socket = io({ auth: { token } });
+
+            function showSection(sectionId) {
+                document.querySelectorAll('.section').forEach(section => section.classList.add('d-none'));
+                document.getElementById(sectionId).classList.remove('d-none');
+                if (sectionId === 'tasks') loadTasks();
+                if (sectionId === 'prioritized') loadPrioritizedTasks();
+                if (sectionId === 'reports') loadReports();
+                if (sectionId === 'support') loadChatHistory();
+                if (sectionId === 'notifications') loadNotifications();
+            }
+
+            function showError(section, message) {
+                document.getElementById(`${section}Content`).innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            }
+
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            const debouncedLoadReports = debounce(loadReports, 500);
+
+            async function loadOverview() {
+                try {
+                    const response = await fetch('/api/student-overview', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao carregar visão geral');
+                    const data = await response.json();
+                    document.getElementById('pendingTasks').textContent = data.pendingTasks || 0;
+                    document.getElementById('completedTasks').textContent = data.completedTasks || 0;
+                    document.getElementById('overdueTasks').textContent = data.overdueTasks || 0;
+                    document.getElementById('upcomingTasks').textContent = data.upcomingTasks || 0;
+                    document.getElementById('overviewContent').innerHTML = '';
+                } catch (error) {
+                    showError('overview', error.message);
+                }
+            }
+
+            async function loadTasks() {
+                try {
+                    const filter = document.getElementById('statusFilter').value;
+                    const response = await fetch(`/api/tasks?filter=${filter}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao carregar tarefas');
+                    const tasks = await response.json();
+                    const tbody = document.getElementById('tasksTable');
+                    tbody.innerHTML = '';
+                    tasks.forEach(task => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
                             <td>${task.title}</td>
                             <td>${task.subject}</td>
                             <td>${task.deadline}</td>
                             <td>${task.priority}</td>
                             <td>${task.status}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editTask('${task.id}', '${task.status}')">Editar</button>
+                                <button class="btn btn-primary btn-sm" onclick="confirmStatusChange('${task.id}', '${task.title}', '${task.status}')">Editar Status</button>
+                                <button class="btn btn-info btn-sm" onclick="viewTask('${task.id}', '${task.title}', '${task.type}', '${task.description}', '${task.deadline}', '${task.subject}', '${task.priority}', '${task.estimatedTime}', '${task.status}')">Ver Detalhes</button>
                             </td>
-                        </tr>`;
-                });
-                toggleLoading('tasks', false);
-            } catch (error) {
-                showError('tasks', `Erro ao carregar tarefas: ${error.message}`);
-            }
-        }
-
-        function editTask(id, status) {
-            document.getElementById('editTaskId').value = id;
-            document.getElementById('editStatus').value = status;
-            new bootstrap.Modal(document.getElementById('editTaskModal')).show();
-        }
-
-        document.getElementById('taskForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const subject = document.getElementById('subject').value === 'Outra' ?
-                document.getElementById('customSubject').value : document.getElementById('subject').value;
-            const task = {
-                title: document.getElementById('title').value,
-                type: document.getElementById('type').value,
-                description: document.getElementById('description').value,
-                deadline: document.getElementById('deadline').value,
-                subject,
-                priority: document.getElementById('priority').value,
-                estimatedTime: document.getElementById('estimatedTime').value
-            };
-            const formAlert = document.getElementById('formAlert');
-            if (!task.subject && document.getElementById('subject').value === 'Outra') {
-                formAlert.innerHTML = '<div class="alert alert-danger">Por favor, informe a disciplina</div>';
-                return;
-            }
-            try {
-                const response = await fetch('/api/tasks', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(task)
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    document.getElementById('tasksContent').innerHTML = tasks.length ? '' : '<div class="alert alert-info">Nenhuma tarefa encontrada</div>';
+                } catch (error) {
+                    showError('tasks', error.message);
                 }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                formAlert.innerHTML = '<div class="alert alert-success">Tarefa adicionada com sucesso</div>';
-                document.getElementById('taskForm').reset();
-                document.getElementById('customSubject').style.display = 'none';
-                loadTasks();
-                loadOverview();
-                loadNotifications();
-            } catch (error) {
-                formAlert.innerHTML = `<div class="alert alert-danger">Erro ao adicionar tarefa: ${error.message}</div>`;
             }
-        });
 
-        document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('editTaskId').value;
-            const task = { status: document.getElementById('editStatus').value };
-            try {
-                const response = await fetch(`/api/tasks/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(task)
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
+            async function loadPrioritizedTasks() {
+                try {
+                    const response = await fetch('/api/tasks/prioritized', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (response.status === 404) throw new Error('Rota de tarefas priorizadas não encontrada. Verifique o servidor.');
+                    if (!response.ok) throw new Error(`Erro ao carregar tarefas priorizadas: ${response.statusText}`);
+                    let tasks = await response.json();
+                    const filter = document.getElementById('priorityFilter').value;
+
+                    // Aplicar filtro
+                    if (filter === 'dateAsc') {
+                        tasks.sort((a, b) => {
+                            const [dayA, monthA, yearA] = a.deadline.split('/');
+                            const [dayB, monthB, yearB] = b.deadline.split('/');
+                            return new Date(`${yearA}-${monthA}-${dayA}`) - new Date(`${yearB}-${monthB}-${dayB}`);
+                        });
+                    } else if (filter === 'dateDesc') {
+                        tasks.sort((a, b) => {
+                            const [dayA, monthA, yearA] = a.deadline.split('/');
+                            const [dayB, monthB, yearB] = b.deadline.split('/');
+                            return new Date(`${yearB}-${monthB}-${dayB}`) - new Date(`${yearA}-${monthA}-${dayA}`);
+                        });
+                    } else if (filter === 'priorityAsc') {
+                        const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+                        tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                    } else if (filter === 'priorityDesc') {
+                        const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+                        tasks.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+                    } else {
+                        // Padrão: Prioridade Alta > Baixa, Data Crescente
+                        const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+                        tasks.sort((a, b) => {
+                            const priorityA = priorityOrder[a.priority] || 3;
+                            const priorityB = priorityOrder[b.priority] || 3;
+                            if (priorityA !== priorityB) return priorityA - priorityB;
+                            const [dayA, monthA, yearA] = a.deadline.split('/');
+                            const [dayB, monthB, yearB] = b.deadline.split('/');
+                            return new Date(`${yearA}-${monthA}-${dayA}`) - new Date(`${yearB}-${monthB}-${dayB}`);
+                        });
+                    }
+
+                    const tbody = document.getElementById('prioritizedTable');
+                    tbody.innerHTML = '';
+                    tasks.forEach(task => {
+                        const row = document.createElement('tr');
+                        row.className = `priority-${task.priority.toLowerCase()}`;
+                        row.innerHTML = `
+                            <td>${task.title}</td>
+                            <td>${task.subject}</td>
+                            <td>${task.deadline}</td>
+                            <td>${task.priority}</td>
+                            <td>${task.status}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="confirmStatusChange('${task.id}', '${task.title}', '${task.status}')">Editar Status</button>
+                                <button class="btn btn-info btn-sm" onclick="viewTask('${task.id}', '${task.title}', '${task.type}', '${task.description}', '${task.deadline}', '${task.subject}', '${task.priority}', '${task.estimatedTime}', '${task.status}')">Ver Detalhes</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    document.getElementById('prioritizedContent').innerHTML = tasks.length ? '' : '<div class="alert alert-info">Nenhuma tarefa pendente</div>';
+                } catch (error) {
+                    console.error('Erro ao carregar tarefas priorizadas:', error);
+                    showError('prioritized', error.message);
                 }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
-                document.getElementById('editFormAlert').innerHTML = '<div class="alert alert-success">Tarefa atualizada com sucesso</div>';
-                loadTasks();
-                loadOverview();
-                loadNotifications();
-            } catch (error) {
-                document.getElementById('editFormAlert').innerHTML = `<div class="alert alert-danger">Erro ao atualizar tarefa: ${error.message}</div>`;
             }
-        });
 
-        document.getElementById('filter').addEventListener('change', loadTasks);
-
-        async function loadReports() {
-            toggleLoading('reports', true);
-            try {
-                const response = await fetch('/api/reports', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                const data = await response.json();
-
-                if (subjectChartInstance) subjectChartInstance.destroy();
-                subjectChartInstance = new Chart(document.getElementById('subjectChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(data.bySubject),
-                        datasets: [
-                            {
-                                label: 'Pendente',
-                                data: Object.keys(data.bySubject).map(s => data.bySubject[s].Pendente || 0),
-                                backgroundColor: 'rgba(255, 99, 132, 0.5)'
+            function confirmStatusChange(taskId, taskTitle, currentStatus) {
+                document.getElementById('statusTaskTitle').textContent = taskTitle;
+                document.getElementById('statusNewStatus').innerHTML = `
+                    <select id="newStatusSelect" class="form-select">
+                        <option value="Pendente" ${currentStatus === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="Em andamento" ${currentStatus === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                        <option value="Concluída" ${currentStatus === 'Concluída' ? 'selected' : ''}>Concluída</option>
+                    </select>
+                `;
+                const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+                modal.show();
+                document.getElementById('confirmStatusChange').onclick = async () => {
+                    const newStatus = document.getElementById('newStatusSelect').value;
+                    if (newStatus === currentStatus) {
+                        modal.hide();
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`/api/tasks/${taskId}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
                             },
-                            {
-                                label: 'Em andamento',
-                                data: Object.keys(data.bySubject).map(s => data.bySubject[s]['Em andamento'] || 0),
-                                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        if (response.status === 401 || response.status === 403) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                        if (!response.ok) throw new Error('Erro ao atualizar status da tarefa');
+                        modal.hide();
+                        loadTasks();
+                        loadPrioritizedTasks();
+                        loadOverview();
+                        loadReports();
+                        socket.emit('taskUpdated', { id: taskId, status: newStatus });
+                    } catch (error) {
+                        showError('tasks', error.message);
+                    }
+                };
+            }
+
+            async function loadReports() {
+                try {
+                    const response = await fetch('/api/reports', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao carregar relatórios');
+                    const data = await response.json();
+                    const subjects = Object.keys(data.bySubject);
+                    const subjectData = subjects.map(subject => ({
+                        subject,
+                        Pendente: data.bySubject[subject].Pendente || 0,
+                        'Em andamento': data.bySubject[subject]['Em andamento'] || 0,
+                        Concluída: data.bySubject[subject].Concluída || 0
+                    }));
+                    let tasksBySubjectChart = Chart.getChart('tasksBySubject');
+                    if (tasksBySubjectChart) tasksBySubjectChart.destroy();
+                    tasksBySubjectChart = new Chart(document.getElementById('tasksBySubject'), {
+                        type: 'bar',
+                        data: {
+                            labels: subjects,
+                            datasets: [
+                                {
+                                    label: 'Pendente',
+                                    data: subjectData.map(d => d.Pendente),
+                                    backgroundColor: '#3498db'
+                                },
+                                {
+                                    label: 'Em andamento',
+                                    data: subjectData.map(d => d['Em andamento']),
+                                    backgroundColor: '#f1c40f'
+                                },
+                                {
+                                    label: 'Concluída',
+                                    data: subjectData.map(d => d.Concluída),
+                                    backgroundColor: '#2ecc71'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { stacked: true },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true,
+                                    ticks: { stepSize: 1, precision: 0 }
+                                }
                             },
-                            {
-                                label: 'Concluída',
-                                data: Object.keys(data.bySubject).map(s => data.bySubject[s].Concluída || 0),
-                                backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                            plugins: { legend: { position: 'top' } }
+                        }
+                    });
+
+                    const typeValues = Object.values(data.byType);
+                    const totalTasks = typeValues.reduce((sum, val) => sum + val, 0);
+                    let tasksByTypeChart = Chart.getChart('tasksByType');
+                    if (tasksByTypeChart) tasksByTypeChart.destroy();
+                    tasksByTypeChart = new Chart(document.getElementById('tasksByType'), {
+                        type: 'pie',
+                        data: {
+                            labels: Object.keys(data.byType),
+                            datasets: [{
+                                data: typeValues,
+                                backgroundColor: ['#3498db', '#f1c40f', '#2ecc71', '#e74c3c']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top' },
+                                datalabels: {
+                                    formatter: (value, ctx) => {
+                                        if (totalTasks === 0) return '';
+                                        const percentage = ((value / totalTasks) * 100).toFixed(1);
+                                        return `${percentage}%`;
+                                    },
+                                    color: '#fff',
+                                    font: { weight: 'bold' }
+                                }
                             }
-                        ]
-                    },
-                    options: { scales: { y: { beginAtZero: true } } }
-                });
+                        }
+                    });
 
-                if (typeChartInstance) typeChartInstance.destroy();
-                typeChartInstance = new Chart(document.getElementById('typeChart'), {
-                    type: 'pie',
-                    data: {
-                        labels: Object.keys(data.byType),
-                        datasets: [{
-                            data: Object.values(data.byType),
-                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-                        }]
+                    document.getElementById('reportsContent').innerHTML = '';
+                } catch (error) {
+                    showError('reports', error.message);
+                }
+            }
+
+            async function loadNotifications() {
+                try {
+                    const response = await fetch('/api/notifications', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
                     }
-                });
-
-                toggleLoading('reports', false);
-            } catch (error) {
-                showError('reports', `Erro ao carregar relatórios: ${error.message}`);
-            }
-        }
-
-        async function loadNotifications() {
-            toggleLoading('notifications', true);
-            try {
-                const response = await fetch('/api/notifications', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                const notifications = await response.json();
-                const notificationList = document.getElementById('notificationList');
-                notificationList.innerHTML = notifications.length ? '' : '<p>Nenhuma notificação encontrada.</p>';
-                notifications.forEach(notification => {
-                    notificationList.innerHTML += `
-                        <div class="list-group-item">
-                            <p>${notification.message}</p>
-                            <small>${new Date(notification.timestamp).toLocaleString('pt-BR')}</small>
-                        </div>`;
-                });
-                toggleLoading('notifications', false);
-            } catch (error) {
-                showError('notifications', `Erro ao carregar notificações: ${error.message}`);
-            }
-        }
-
-        async function loadChatHistory() {
-            toggleLoading('support', true);
-            try {
-                const response = await fetch('/api/chats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
-                const chats = await response.json();
-                const chatMessages = document.getElementById('chatMessages');
-                chatMessages.innerHTML = '';
-                chats.forEach(chat => {
-                    const isUser = chat.from === userName;
-                    chatMessages.innerHTML += `
-                        <div class="${isUser ? 'text-end' : 'text-start'} mb-2">
-                            <strong>${chat.from}:</strong> ${chat.message}
-                            <small class="d-block">${new Date(chat.timestamp).toLocaleString('pt-BR')}</small>
-                        </div>`;
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                toggleLoading('support', false);
-            } catch (error) {
-                showError('support', `Erro ao carregar histórico de chat: ${error.message}`);
-            }
-        }
-
-        document.getElementById('chatForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = document.getElementById('chatInput').value.trim();
-            if (!message) return;
-            const chatMessages = document.getElementById('chatMessages');
-            const timestamp = new Date().toISOString();
-
-            // Adicionar mensagem localmente
-            chatMessages.innerHTML += `
-                <div class="text-end mb-2">
-                    <strong>Você:</strong> ${message}
-                    <small class="d-block">${new Date(timestamp).toLocaleString('pt-BR')}</small>
-                </div>`;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Enviar mensagem ao servidor
-            const to = isAdminChat ? 'admin' : 'bot';
-            socket.emit('chatMessage', { message, to, timestamp });
-
-            // Verificar limite de interações com o bot
-            if (!isAdminChat && botInteractionCount >= maxBotInteractions) {
-                socket.emit('requestAdmin', { username: userName });
-                isAdminChat = true;
-                document.getElementById('chatAlert').innerHTML = '<div class="alert alert-info">Conectando ao administrador...</div>';
-            }
-
-            document.getElementById('chatInput').value = '';
-        });
-
-        socket.on('chatMessage', (data) => {
-            const chatMessages = document.getElementById('chatMessages');
-            const isUser = data.from === userName;
-
-            // Evitar duplicação: não adicionar mensagens enviadas pelo próprio usuário
-            if (!isUser) {
-                chatMessages.innerHTML += `
-                    <div class="text-start mb-2">
-                        <strong>${data.from}:</strong> ${data.message}
-                        <small class="d-block">${new Date(data.timestamp).toLocaleString('pt-BR')}</small>
-                    </div>`;
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-
-                // Incrementar contador apenas para mensagens do bot
-                if (data.from === 'Bot' && !isAdminChat) {
-                    botInteractionCount++;
-                    if (botInteractionCount >= maxBotInteractions) {
-                        socket.emit('requestAdmin', { username: userName });
-                        isAdminChat = true;
-                        document.getElementById('chatAlert').innerHTML = '<div class="alert alert-info">Conectado ao administrador...</div>';
+                    if (!response.ok) throw new Error('Erro ao carregar notificações');
+                    const notifications = await response.json();
+                    const content = document.getElementById('notificationsContent');
+                    content.innerHTML = '';
+                    if (notifications.length) {
+                        const ul = document.createElement('ul');
+                        ul.className = 'list-group';
+                        notifications.forEach(n => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            li.innerHTML = `<strong>${new Date(n.timestamp).toLocaleString()}</strong>: ${n.message}`;
+                            ul.appendChild(li);
+                        });
+                        content.appendChild(ul);
+                    } else {
+                        content.innerHTML = '<div class="alert alert-info">Nenhuma notificação</div>';
                     }
+                } catch (error) {
+                    showError('notifications', error.message);
                 }
             }
-        });
 
-        socket.on('error', (message) => {
-            showError('support', message);
-        });
+            async function loadChatHistory() {
+                try {
+                    const recipient = document.getElementById('chatRecipient').value;
+                    const response = await fetch(`/api/chats?username=${recipient}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao carregar histórico de chat');
+                    const chats = await response.json();
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    chats.forEach(chat => {
+                        const div = document.createElement('div');
+                        div.className = `message ${chat.from === jwt_decode(token).username ? 'message-user' : 'message-admin'}`;
+                        div.innerHTML = `
+                            <div class="message-content">
+                                <strong>${chat.from}</strong>
+                                <p>${chat.message}</p>
+                                <span class="message-timestamp">${new Date(chat.timestamp).toLocaleString()}</span>
+                            </div>
+                        `;
+                        chatMessages.appendChild(div);
+                    });
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    document.getElementById('supportContent').innerHTML = '';
+                } catch (error) {
+                    showError('support', error.message);
+                }
+            }
 
-        socket.on('authenticated', () => {
-            socket.emit('join', `room:${userName}`);
-            loadChatHistory();
-        });
+            function viewTask(id, title, type, description, deadline, subject, priority, estimatedTime, status) {
+                document.getElementById('viewTaskDetails').innerHTML = `
+                    <strong>Título:</strong> ${title}<br>
+                    <strong>Tipo:</strong> ${type}<br>
+                    <strong>Descrição:</strong> ${description}<br>
+                    <strong>Data de Entrega:</strong> ${deadline}<br>
+                    <strong>Disciplina:</strong> ${subject}<br>
+                    <strong>Prioridade:</strong> ${priority}<br>
+                    <strong>Tempo Estimado:</strong> ${estimatedTime}<br>
+                    <strong>Status:</strong> ${status}
+                `;
+                const modal = new bootstrap.Modal(document.getElementById('viewTaskModal'));
+                modal.show();
+            }
 
-        socket.on('connect_error', (error) => {
-            console.error('Erro de conexão Socket.IO:', error.message);
-            showError('support', 'Erro de conexão com o servidor de chat');
-        });
+            document.getElementById('taskForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const task = {
+                    title: document.getElementById('taskTitle').value,
+                    type: document.getElementById('taskType').value,
+                    description: document.getElementById('taskDescription').value,
+                    deadline: document.getElementById('taskDeadline').value,
+                    subject: document.getElementById('taskSubject').value,
+                    priority: document.getElementById('taskPriority').value,
+                    estimatedTime: document.getElementById('taskEstimatedTime').value
+                };
+                try {
+                    const response = await fetch('/api/tasks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(task)
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao adicionar tarefa');
+                    document.getElementById('taskForm').reset();
+                    bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+                    loadTasks();
+                    loadPrioritizedTasks();
+                    loadOverview();
+                    loadReports();
+                    socket.emit('newTask', task);
+                } catch (error) {
+                    showError('tasks', error.message);
+                }
+            });
 
-        socket.on('newTask', () => {
-            loadTasks();
+            document.getElementById('chatForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = document.getElementById('chatInput').value;
+                const to = document.getElementById('chatRecipient').value;
+                if (!message.trim()) return;
+                const timestamp = new Date().toISOString();
+                try {
+                    const response = await fetch('/api/chats', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ message, to, timestamp })
+                    });
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Erro ao enviar mensagem');
+                    socket.emit('chatMessage', { message, to, timestamp });
+                    document.getElementById('chatInput').value = '';
+                    loadChatHistory();
+                    if (to === 'admin') {
+                        socket.emit('requestAdmin', { from: jwt_decode(token).username });
+                    }
+                } catch (error) {
+                    showError('support', error.message);
+                }
+            });
+
+            document.getElementById('chatRecipient').addEventListener('change', () => {
+                loadChatHistory();
+            });
+
+            socket.on('authenticated', () => {
+                console.log('Autenticado no Socket.IO');
+                loadChatHistory();
+            });
+
+            socket.on('chatMessage', (data) => {
+                const currentRecipient = document.getElementById('chatRecipient').value;
+                if (data.from === currentRecipient || data.to === currentRecipient) {
+                    loadChatHistory();
+                }
+            });
+
+            socket.on('botLimitReached', () => {
+                document.getElementById('supportContent').innerHTML = '<div class="alert alert-info">Limite de interações com o bot atingido. Redirecionando para o administrador...</div>';
+                const recipientSelect = document.getElementById('chatRecipient');
+                recipientSelect.value = 'admin';
+                recipientSelect.querySelector('option[value="admin"]').disabled = false;
+                setTimeout(() => {
+                    document.getElementById('supportContent').innerHTML = '';
+                    loadChatHistory();
+                }, 2000);
+            });
+
+            socket.on('error', (error) => {
+                console.error('Erro de conexão Socket.IO:', error);
+                showError('support', error.message || 'Erro de conexão com o servidor de chat');
+            });
+
+            socket.on('newTask', (task) => {
+                loadTasks();
+                loadPrioritizedTasks();
+                loadOverview();
+                loadReports();
+            });
+
+            socket.on('taskUpdated', (task) => {
+                loadTasks();
+                loadPrioritizedTasks();
+                loadOverview();
+                loadReports();
+            });
+
+            socket.on('newNotification', (notification) => {
+                if (document.getElementById('notifications').classList.contains('d-none')) return;
+                loadNotifications();
+            });
+
+            function logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userName');
+                window.location.href = 'index.html';
+            }
+
             loadOverview();
-            loadNotifications();
-        });
-
-        socket.on('taskUpdated', () => {
             loadTasks();
-            loadOverview();
+            loadReports();
             loadNotifications();
-        });
-
-        function logout() {
-            if (!window.confirm('Tem certeza que deseja sair?')) return;
-            localStorage.removeItem('token');
-            localStorage.removeItem('userName');
-            window.location.href = 'index.html';
-        }
-
-        // Carregar dados iniciais
-        loadOverview();
-        loadTasks();
-        loadReports();
-        loadNotifications();
-    </script>
-</body>
+        </script>
+    </body>
 </html>

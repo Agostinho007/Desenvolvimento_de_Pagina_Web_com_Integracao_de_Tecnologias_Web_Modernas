@@ -31,55 +31,121 @@
       "role": "student"
     },
     {
-      "id": "5",
-      "name": "Leocenia Hilario",
-      "username": "Lara",
-      "password": "1234",
-      "role": "admin"
-    },
-    {
       "id": "6",
       "name": "Ivandro Mendolo",
       "matricula": "1234",
       "username": "Ivan",
       "password": "1234",
       "role": "student"
+    },
+    {
+      "id": "7",
+      "name": "Anastacia Osmondi",
+      "matricula": "123456",
+      "username": "ana",
+      "password": "1234",
+      "role": "student"
+    },
+    {
+      "id": "8",
+      "name": "Mussaldyne Rhey",
+      "matricula": "123457",
+      "username": "mussa",
+      "password": "1234",
+      "role": "student"
     }
   ],
   "tasks": [
     {
-      "id": "1",
-      "title": "Representacao Digital do Audio ",
-      "type": "Apresentação",
-      "description": "Slides feito no Canvas",
-      "deadline": "13/05/2025",
-      "subject": "Multimedia",
-      "assignedTo": [
-        "pain"
-      ],
-      "groupMembers": [
-        "pain"
-      ],
+      "id": "3",
+      "title": "Desenvolvimento Web",
+      "type": "Trabalho individual",
+      "description": "dsds",
+      "deadline": "15/05/2025",
+      "subject": "Programação Web",
       "priority": "Alta",
-      "estimatedTime": "30 Minutos",
-      "status": "Pendente"
+      "estimatedTime": "2 Horas",
+      "status": "Em andamento",
+      "userId": "4",
+      "createdAt": "2025-05-13T08:41:50.224Z"
     },
     {
       "id": "2",
-      "title": "Teste 2",
+      "title": "Web",
       "type": "Trabalho em grupo",
-      "description": "Trabalho de Caracter Avaliativo",
-      "deadline": "23/05/2025",
-      "subject": "Seguranca em Redes",
-      "assignedTo": [
-        "Ivan"
-      ],
-      "groupMembers": [
-        "Ivan"
-      ],
+      "description": "Lorem",
+      "deadline": "15/05/2025",
+      "subject": "Inteligência Artificial",
       "priority": "Alta",
-      "estimatedTime": "90 Minutos",
-      "status": "Pendente"
+      "estimatedTime": "5 Horas",
+      "status": "Pendente",
+      "userId": "4",
+      "createdAt": "2025-05-13T08:44:23.250Z"
+    },
+    {
+      "id": "3",
+      "title": "Dynamic Service",
+      "type": "Apresentação",
+      "description": "Lorem",
+      "deadline": "22/05/2025",
+      "subject": "Programação",
+      "priority": "Média",
+      "estimatedTime": "4 Horas",
+      "status": "Concluída",
+      "userId": "6",
+      "createdAt": "2025-05-13T08:46:27.587Z"
+    },
+    {
+      "id": "4",
+      "title": "Dynamic Service II",
+      "type": "Trabalho individual",
+      "description": "Lorem",
+      "deadline": "2025-05-16",
+      "subject": "Programação Movel",
+      "priority": "Média",
+      "estimatedTime": "4 Horas",
+      "status": "Em andamento",
+      "userId": "4",
+      "createdAt": "2025-05-13T10:05:16.488Z"
+    },
+    {
+      "id": "5",
+      "title": "Web 3.0",
+      "type": "Revisão",
+      "description": "Lorem",
+      "deadline": "20/05/2025",
+      "subject": "Web JSP",
+      "priority": "Média",
+      "estimatedTime": "2 Dia",
+      "status": "Em andamento",
+      "userId": "7",
+      "createdAt": "2025-05-13T12:32:39.713Z"
+    },
+    {
+      "id": "6",
+      "title": "Desenvolvimento Visual",
+      "type": "Trabalho individual",
+      "description": "Lorem",
+      "deadline": "15/05/2025",
+      "subject": "Inteligência Artificial",
+      "priority": "Alta",
+      "estimatedTime": "1 Dia",
+      "status": "Pendente",
+      "userId": "7",
+      "createdAt": "2025-05-13T12:35:32.000Z"
+    },
+    {
+      "id": "7",
+      "title": "Desenvolvimento Web",
+      "type": "Trabalho em grupo",
+      "description": "Lorem",
+      "deadline": "16/05/2025",
+      "subject": "Programação",
+      "priority": "Média",
+      "estimatedTime": "3 Dia",
+      "status": "Concluída",
+      "userId": "8",
+      "createdAt": "2025-05-13T12:38:36.314Z"
     }
   ],
   "disciplines": [
@@ -89,7 +155,8 @@
     "História",
     "Física",
     "Multimedia",
-    "Seguranca em Redes"
+    "Seguranca em Redes",
+    "Tecnologias de Internet"
   ],
   "notifications": [
     {
@@ -127,913 +194,77 @@
       "message": "Tarefa atualizada: Teste 2 (Seguranca em Redes) - Status: Pendente",
       "timestamp": "2025-05-12T21:17:51.059Z",
       "user": "Ivan"
-    }
-  ],
-  "chats": [
-    {
-      "id": "1",
-      "from": "pain",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:02:56.618Z"
-    },
-    {
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:02:56.620Z"
-    },
-    {
-      "id": "3",
-      "from": "pain",
-      "to": "bot",
-      "message": "tarefa",
-      "timestamp": "2025-05-12T20:03:01.911Z"
-    },
-    {
-      "from": "Bot",
-      "to": "pain",
-      "message": "Você gostaria de criar uma nova tarefa ou verificar suas tarefas pendentes?",
-      "timestamp": "2025-05-12T20:03:01.912Z"
-    },
-    {
-      "id": "5",
-      "from": "pain",
-      "to": "bot",
-      "message": "sim",
-      "timestamp": "2025-05-12T20:03:06.570Z"
-    },
-    {
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:03:06.570Z"
     },
     {
       "id": "7",
-      "from": "pain",
-      "to": "bot",
-      "message": "prazo",
-      "timestamp": "2025-05-12T20:03:11.805Z"
+      "message": "Nova tarefa criada: dsds (Matemática)",
+      "timestamp": "2025-05-12T21:56:48.542Z",
+      "user": "Ivan"
     },
     {
-      "from": "Bot",
-      "to": "pain",
-      "message": "Por favor, me diga qual tarefa você quer verificar o prazo ou use o painel para ver todas as datas.",
-      "timestamp": "2025-05-12T20:03:11.806Z"
+      "id": "8",
+      "message": "Nova tarefa criada: WebSocket (Tecnologias de Internet)",
+      "timestamp": "2025-05-12T22:35:56.484Z",
+      "user": "pain"
     },
     {
       "id": "9",
-      "from": "pain",
-      "to": "bot",
-      "message": "disciplina",
-      "timestamp": "2025-05-12T20:03:19.820Z"
+      "userId": "4",
+      "message": "Tarefa \"Web 2.0\" foi excluída pelo administrador",
+      "timestamp": "2025-05-13T11:06:38.452Z"
     },
     {
-      "from": "Bot",
-      "to": "pain",
-      "message": "Qual disciplina você está buscando? Posso listar suas tarefas por disciplina.",
-      "timestamp": "2025-05-12T20:03:19.821Z"
+      "id": "10",
+      "userId": "1",
+      "message": "Tarefa \"Web 2.0\" excluída para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:06:38.453Z"
     },
     {
       "id": "11",
-      "from": "pain",
-      "to": "admin",
-      "message": "ola",
-      "timestamp": "2025-05-12T20:03:29.865Z"
+      "userId": "3",
+      "message": "Tarefa \"Web 2.0\" excluída para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:06:38.453Z"
     },
     {
       "id": "12",
-      "from": "echande",
-      "to": "pain",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:03:33.140Z"
+      "userId": "6",
+      "message": "Tarefa \"Web 2.0\" excluída para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:06:38.453Z"
     },
     {
       "id": "13",
-      "from": "pain",
-      "to": "admin",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:04:07.121Z"
+      "userId": "4",
+      "message": "Tarefa \"Dynamic Service II\" foi editada pelo administrador",
+      "timestamp": "2025-05-13T11:07:38.176Z"
     },
     {
       "id": "14",
-      "from": "echande",
-      "to": "pain",
-      "message": "ola",
-      "timestamp": "2025-05-12T20:04:12.776Z"
+      "userId": "1",
+      "message": "Tarefa \"Dynamic Service II\" editada para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:07:38.177Z"
     },
     {
       "id": "15",
-      "from": "pain",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:18:24.099Z"
+      "userId": "3",
+      "message": "Tarefa \"Dynamic Service II\" editada para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:07:38.177Z"
     },
     {
       "id": "16",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:18:24.103Z"
-    },
-    {
-      "id": "17",
-      "from": "pain",
-      "to": "bot",
-      "message": "tudo bem?",
-      "timestamp": "2025-05-12T20:18:31.798Z"
-    },
-    {
-      "id": "18",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:18:31.801Z"
-    },
-    {
-      "id": "19",
-      "from": "pain",
-      "to": "bot",
-      "message": "prazo",
-      "timestamp": "2025-05-12T20:18:35.346Z"
-    },
-    {
-      "id": "20",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Por favor, me diga qual tarefa você quer verificar o prazo ou use o painel para ver todas as datas.",
-      "timestamp": "2025-05-12T20:18:35.349Z"
-    },
-    {
-      "id": "21",
-      "from": "pain",
-      "to": "bot",
-      "message": "dia 25",
-      "timestamp": "2025-05-12T20:18:42.964Z"
-    },
-    {
-      "id": "22",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:18:42.967Z"
-    },
-    {
-      "id": "23",
-      "from": "pain",
-      "to": "bot",
-      "message": "disciplina",
-      "timestamp": "2025-05-12T20:18:47.772Z"
-    },
-    {
-      "id": "24",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Qual disciplina você está buscando? Posso listar suas tarefas por disciplina.",
-      "timestamp": "2025-05-12T20:18:47.777Z"
-    },
-    {
-      "id": "25",
-      "from": "pain",
-      "to": "admin",
-      "message": "oi admin",
-      "timestamp": "2025-05-12T20:19:06.375Z"
-    },
-    {
-      "id": "26",
-      "from": "echande",
-      "to": "pain",
-      "message": "ola",
-      "timestamp": "2025-05-12T20:19:18.530Z"
-    },
-    {
-      "id": "27",
-      "from": "echande",
-      "to": "pain",
-      "message": "tudo bem?",
-      "timestamp": "2025-05-12T20:20:01.017Z"
-    },
-    {
-      "id": "28",
-      "from": "pain",
-      "to": "admin",
-      "message": "sim e vc?",
-      "timestamp": "2025-05-12T20:20:10.952Z"
-    },
-    {
-      "id": "29",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:20:37.207Z"
-    },
-    {
-      "id": "30",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:20:37.214Z"
-    },
-    {
-      "id": "31",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "tarefa",
-      "timestamp": "2025-05-12T20:20:41.422Z"
-    },
-    {
-      "id": "32",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Você gostaria de criar uma nova tarefa ou verificar suas tarefas pendentes?",
-      "timestamp": "2025-05-12T20:20:41.423Z"
-    },
-    {
-      "id": "33",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "prazo",
-      "timestamp": "2025-05-12T20:20:44.620Z"
-    },
-    {
-      "id": "34",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Por favor, me diga qual tarefa você quer verificar o prazo ou use o painel para ver todas as datas.",
-      "timestamp": "2025-05-12T20:20:44.622Z"
-    },
-    {
-      "id": "35",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "sim",
-      "timestamp": "2025-05-12T20:20:49.657Z"
-    },
-    {
-      "id": "36",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:20:49.659Z"
-    },
-    {
-      "id": "37",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "disciplina",
-      "timestamp": "2025-05-12T20:20:53.892Z"
-    },
-    {
-      "id": "38",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Qual disciplina você está buscando? Posso listar suas tarefas por disciplina.",
-      "timestamp": "2025-05-12T20:20:53.894Z"
-    },
-    {
-      "id": "39",
-      "from": "Ivan",
-      "to": "admin",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:21:01.052Z"
-    },
-    {
-      "id": "40",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "ola tudo bem?",
-      "timestamp": "2025-05-12T20:21:13.886Z"
-    },
-    {
-      "id": "41",
-      "from": "Nel",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:26:00.260Z"
-    },
-    {
-      "id": "42",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:26:00.280Z"
-    },
-    {
-      "id": "43",
-      "from": "Nel",
-      "to": "bot",
-      "message": "ioi",
-      "timestamp": "2025-05-12T20:26:03.515Z"
-    },
-    {
-      "id": "44",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:26:03.517Z"
-    },
-    {
-      "id": "45",
-      "from": "Nel",
-      "to": "bot",
-      "message": "k'",
-      "timestamp": "2025-05-12T20:26:05.490Z"
-    },
-    {
-      "id": "46",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:26:05.492Z"
-    },
-    {
-      "id": "47",
-      "from": "Nel",
-      "to": "bot",
-      "message": "k",
-      "timestamp": "2025-05-12T20:26:06.250Z"
-    },
-    {
-      "id": "48",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:26:06.253Z"
-    },
-    {
-      "id": "49",
-      "from": "Nel",
-      "to": "bot",
-      "message": "k",
-      "timestamp": "2025-05-12T20:26:07.204Z"
-    },
-    {
-      "id": "50",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:26:07.206Z"
-    },
-    {
-      "id": "51",
-      "from": "Nel",
-      "to": "admin",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:26:14.694Z"
-    },
-    {
-      "id": "52",
-      "from": "echande",
-      "to": "Nel",
-      "message": "Olá",
-      "timestamp": "2025-05-12T20:26:19.132Z"
-    },
-    {
-      "id": "53",
-      "from": "Nel",
-      "to": "admin",
-      "message": "td bm",
-      "timestamp": "2025-05-12T20:26:26.069Z"
-    },
-    {
-      "id": "54",
-      "from": "echande",
-      "to": "Nel",
-      "message": "Sim e você",
-      "timestamp": "2025-05-12T20:26:32.353Z"
-    },
-    {
-      "id": "55",
-      "from": "Nel",
-      "to": "admin",
-      "message": "great",
-      "timestamp": "2025-05-12T20:26:37.491Z"
-    },
-    {
-      "id": "56",
-      "from": "echande",
-      "to": "Nel",
-      "message": "Awesome.",
-      "timestamp": "2025-05-12T20:26:45.175Z"
-    },
-    {
-      "id": "57",
-      "from": "pain",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:27:16.271Z"
-    },
-    {
-      "id": "58",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:27:16.275Z"
-    },
-    {
-      "id": "59",
-      "from": "pain",
-      "to": "bot",
-      "message": "jkjk",
-      "timestamp": "2025-05-12T20:27:20.298Z"
-    },
-    {
-      "id": "60",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:27:20.302Z"
-    },
-    {
-      "id": "61",
-      "from": "pain",
-      "to": "bot",
-      "message": "kjk",
-      "timestamp": "2025-05-12T20:27:22.302Z"
-    },
-    {
-      "id": "62",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:27:22.305Z"
-    },
-    {
-      "id": "63",
-      "from": "pain",
-      "to": "bot",
-      "message": "jkj",
-      "timestamp": "2025-05-12T20:27:24.080Z"
-    },
-    {
-      "id": "64",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:27:24.084Z"
-    },
-    {
-      "id": "65",
-      "from": "Nel",
-      "to": "admin",
-      "message": "kkkk",
-      "timestamp": "2025-05-12T20:27:40.237Z"
-    },
-    {
-      "id": "66",
-      "from": "pain",
-      "to": "bot",
-      "message": "kjkjk",
-      "timestamp": "2025-05-12T20:27:45.773Z"
-    },
-    {
-      "id": "67",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:27:45.776Z"
-    },
-    {
-      "id": "68",
-      "from": "pain",
-      "to": "admin",
-      "message": "nn",
-      "timestamp": "2025-05-12T20:27:48.398Z"
-    },
-    {
-      "id": "69",
-      "from": "echande",
-      "to": "pain",
-      "message": "Kkk",
-      "timestamp": "2025-05-12T20:27:55.764Z"
-    },
-    {
-      "id": "70",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:38:09.847Z"
-    },
-    {
-      "id": "71",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:38:09.854Z"
-    },
-    {
-      "id": "72",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "prazo",
-      "timestamp": "2025-05-12T20:38:13.536Z"
-    },
-    {
-      "id": "73",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Por favor, me diga qual tarefa você quer verificar o prazo ou use o painel para ver todas as datas.",
-      "timestamp": "2025-05-12T20:38:13.539Z"
-    },
-    {
-      "id": "74",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "klda",
-      "timestamp": "2025-05-12T20:38:18.682Z"
-    },
-    {
-      "id": "75",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:38:18.684Z"
-    },
-    {
-      "id": "76",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "das",
-      "timestamp": "2025-05-12T20:38:19.305Z"
-    },
-    {
-      "id": "77",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:38:19.308Z"
-    },
-    {
-      "id": "78",
-      "from": "Ivan",
-      "to": "bot",
-      "message": "dsa",
-      "timestamp": "2025-05-12T20:38:19.790Z"
-    },
-    {
-      "id": "79",
-      "from": "Bot",
-      "to": "Ivan",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:38:19.796Z"
-    },
-    {
-      "id": "80",
-      "from": "Ivan",
-      "to": "admin",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:38:27.611Z"
-    },
-    {
-      "id": "81",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "Ola dnv",
-      "timestamp": "2025-05-12T20:38:33.665Z"
-    },
-    {
-      "id": "82",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "Tudo bem?",
-      "timestamp": "2025-05-12T20:38:48.113Z"
-    },
-    {
-      "id": "83",
-      "from": "Ivan",
-      "to": "admin",
-      "message": "sim",
-      "timestamp": "2025-05-12T20:38:53.948Z"
-    },
-    {
-      "id": "84",
-      "from": "pain",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:39:32.911Z"
-    },
-    {
-      "id": "85",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:39:32.917Z"
-    },
-    {
-      "id": "86",
-      "from": "pain",
-      "to": "bot",
-      "message": "fd",
-      "timestamp": "2025-05-12T20:39:34.724Z"
-    },
-    {
-      "id": "87",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:39:34.727Z"
-    },
-    {
-      "id": "88",
-      "from": "pain",
-      "to": "bot",
-      "message": "fd",
-      "timestamp": "2025-05-12T20:39:35.276Z"
-    },
-    {
-      "id": "89",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:39:35.280Z"
-    },
-    {
-      "id": "90",
-      "from": "pain",
-      "to": "bot",
-      "message": "fd",
-      "timestamp": "2025-05-12T20:39:35.708Z"
-    },
-    {
-      "id": "91",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:39:35.714Z"
-    },
-    {
-      "id": "92",
-      "from": "pain",
-      "to": "bot",
-      "message": "fd",
-      "timestamp": "2025-05-12T20:39:37.015Z"
-    },
-    {
-      "id": "93",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:39:37.022Z"
-    },
-    {
-      "id": "94",
-      "from": "pain",
-      "to": "admin",
-      "message": "ola",
-      "timestamp": "2025-05-12T20:39:43.068Z"
-    },
-    {
-      "id": "95",
-      "from": "echande",
-      "to": "pain",
-      "message": "Oi",
-      "timestamp": "2025-05-12T20:39:53.234Z"
-    },
-    {
-      "id": "96",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "Of course",
-      "timestamp": "2025-05-12T20:40:09.772Z"
-    },
-    {
-      "id": "97",
-      "from": "echande",
-      "to": "pain",
-      "message": "Oi dnv",
-      "timestamp": "2025-05-12T20:40:23.774Z"
-    },
-    {
-      "id": "98",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "Nada",
-      "timestamp": "2025-05-12T20:40:30.322Z"
-    },
-    {
-      "id": "99",
-      "from": "Ivan",
-      "to": "admin",
-      "message": "ok",
-      "timestamp": "2025-05-12T20:40:35.891Z"
-    },
-    {
-      "id": "100",
-      "from": "pain",
-      "to": "admin",
-      "message": "giii",
-      "timestamp": "2025-05-12T20:40:39.643Z"
-    },
-    {
-      "id": "101",
-      "from": "Nel",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:41:54.594Z"
-    },
-    {
-      "id": "102",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:41:54.597Z"
-    },
-    {
-      "id": "103",
-      "from": "Nel",
-      "to": "bot",
-      "message": "jk",
-      "timestamp": "2025-05-12T20:41:56.440Z"
-    },
-    {
-      "id": "104",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:41:56.442Z"
-    },
-    {
-      "id": "105",
-      "from": "Nel",
-      "to": "bot",
-      "message": "jk",
-      "timestamp": "2025-05-12T20:41:57.919Z"
-    },
-    {
-      "id": "106",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:41:57.922Z"
-    },
-    {
-      "id": "107",
-      "from": "Nel",
-      "to": "bot",
-      "message": "jk",
-      "timestamp": "2025-05-12T20:41:59.556Z"
-    },
-    {
-      "id": "108",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:41:59.559Z"
-    },
-    {
-      "id": "109",
-      "from": "Nel",
-      "to": "bot",
-      "message": "jk",
-      "timestamp": "2025-05-12T20:42:01.380Z"
-    },
-    {
-      "id": "110",
-      "from": "Bot",
-      "to": "Nel",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:42:01.383Z"
-    },
-    {
-      "id": "111",
-      "from": "Nel",
-      "to": "admin",
-      "message": "yuuu",
-      "timestamp": "2025-05-12T20:42:08.647Z"
-    },
-    {
-      "id": "112",
-      "from": "echande",
-      "to": "Nel",
-      "message": "Oi",
-      "timestamp": "2025-05-12T20:42:13.961Z"
-    },
-    {
-      "id": "113",
-      "from": "Nel",
-      "to": "admin",
-      "message": "jkj",
-      "timestamp": "2025-05-12T20:42:18.094Z"
-    },
-    {
-      "id": "114",
-      "from": "Ivan",
-      "to": "admin",
-      "message": "desculpa",
-      "timestamp": "2025-05-12T20:42:34.046Z"
-    },
-    {
-      "id": "115",
-      "from": "echande",
-      "to": "Ivan",
-      "message": "Hiii",
-      "timestamp": "2025-05-12T20:42:39.393Z"
-    },
-    {
-      "id": "116",
-      "from": "echande",
-      "to": "pain",
-      "message": "Ok",
-      "timestamp": "2025-05-12T20:42:48.627Z"
-    },
-    {
-      "id": "117",
-      "from": "pain",
-      "to": "bot",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:57:59.826Z"
-    },
-    {
-      "id": "118",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:57:59.836Z"
-    },
-    {
-      "id": "119",
-      "from": "pain",
-      "to": "bot",
-      "message": "pra",
-      "timestamp": "2025-05-12T20:58:04.855Z"
-    },
-    {
-      "id": "120",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:58:04.860Z"
-    },
-    {
-      "id": "121",
-      "from": "pain",
-      "to": "bot",
-      "message": "kl",
-      "timestamp": "2025-05-12T20:58:06.161Z"
-    },
-    {
-      "id": "122",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:58:06.166Z"
-    },
-    {
-      "id": "123",
-      "from": "pain",
-      "to": "bot",
-      "message": "kl",
-      "timestamp": "2025-05-12T20:58:07.313Z"
-    },
-    {
-      "id": "124",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:58:07.318Z"
-    },
-    {
-      "id": "125",
-      "from": "pain",
-      "to": "bot",
-      "message": "kl",
-      "timestamp": "2025-05-12T20:58:08.287Z"
-    },
-    {
-      "id": "126",
-      "from": "Bot",
-      "to": "pain",
-      "message": "Desculpe, não entendi. Tente usar palavras como \"tarefa\", \"prazo\" ou \"disciplina\".",
-      "timestamp": "2025-05-12T20:58:08.294Z"
-    },
-    {
-      "id": "127",
-      "from": "pain",
-      "to": "admin",
-      "message": "oi",
-      "timestamp": "2025-05-12T20:58:18.036Z"
-    },
-    {
-      "id": "128",
-      "from": "echande",
-      "to": "pain",
-      "message": "iO",
-      "timestamp": "2025-05-12T20:58:30.859Z"
-    },
-    {
-      "id": "129",
-      "from": "echande",
-      "to": "pain",
-      "message": "bem?men oduT",
-      "timestamp": "2025-05-12T20:58:39.423Z"
-    },
-    {
-      "id": "130",
-      "from": "echande",
-      "to": "pain",
-      "message": "?meb oduT",
-      "timestamp": "2025-05-12T20:58:56.130Z"
+      "userId": "6",
+      "message": "Tarefa \"Dynamic Service II\" editada para aluno Agostinho Marques",
+      "timestamp": "2025-05-13T11:07:38.177Z"
     }
-  ]
+  ],
+  "chats": [],
+  "botInteractions": {
+    "2": {
+      "count": 0,
+      "lastInteraction": null
+    },
+    "3": {
+      "count": 0,
+      "lastInteraction": null
+    }
+  }
 }
